@@ -227,7 +227,7 @@
       if (it.picked.size) cls += " exam-nav__item--answered";
       if (it.flagged) cls += " exam-nav__item--flagged";
       if (state.checked.has(i)) cls += isCorrect(it) ? " exam-nav__item--right" : " exam-nav__item--wrong";
-      nav.append(el("button", { class: cls, title: `Question ${i + 1}`, onclick: () => { state.index = i; renderQuestion(); } },
+      nav.append(el("button", { class: cls, title: `Question ${i + 1}`, onclick: () => { state.index = i; renderQuestion(); scrollToQuestion(); } },
         String(i + 1)));
     });
     const check = host.querySelector(".exam-actions .md-button--primary:not(.exam-submit)");
@@ -237,6 +237,12 @@
   function go(step) {
     state.index = Math.min(state.items.length - 1, Math.max(0, state.index + step));
     renderQuestion();
+    scrollToQuestion();
+  }
+  // Keep the question in view when moving between questions (the header is sticky).
+  function scrollToQuestion() {
+    const top = host.getBoundingClientRect().top + window.scrollY - 80;
+    if (window.scrollY > top) window.scrollTo({ top });
   }
 
   function checkAnswer() {
