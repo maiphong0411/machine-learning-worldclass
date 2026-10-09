@@ -33,7 +33,7 @@
       else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
       else node.setAttribute(k, v);
     });
-    children.flat().forEach((c) => node.append(c instanceof Node ? c : document.createTextNode(c)));
+    children.flat(Infinity).forEach((c) => node.append(c instanceof Node ? c : document.createTextNode(c)));
     return node;
   }
   // Question text is plain text with `inline code` and blank-line paragraphs.
@@ -204,8 +204,9 @@
     actions.push(el("button", { class: "md-button md-button--primary exam-submit", onclick: () => submit(false) },
       state.mode === "mock" ? "Submit exam" : "Finish"));
 
+    host.dataset.qid = q.id;
     host.append(header,
-      el("p", { class: "exam-objective" }, `Objective: ${q.objective}`),
+      el("p", { class: "exam-objective" }, `${q.id} · Objective: ${q.objective}`),
       rich(q.question),
       multi ? el("p", { class: "exam-muted" }, "Select TWO answers.") : "",
       choices,
@@ -296,7 +297,7 @@
       el("div", { class: "exam-actions" },
         el("button", { class: "md-button md-button--primary", onclick: renderSetup }, "Back to practice menu")),
       el("h3", {}, "Review every question"),
-      state.items.map((it, i) => el("details", { class: "exam-review" },
+      ...state.items.map((it, i) => el("details", { class: "exam-review" },
         el("summary", {}, `${isCorrect(it) ? "✅" : "❌"} ${i + 1}. ${it.q.id} — ${it.q.objective}`),
         rich(it.q.question),
         el("ul", {}, Object.entries(it.q.choices).map(([l, t]) => el("li", {

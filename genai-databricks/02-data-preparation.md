@@ -323,7 +323,7 @@ Raising *k* to 10 can raise recall but usually lowers precision and costs LLM to
 |---|---|---|
 | `RetrievalRelevance` | Is each retrieved chunk relevant to the request? (a context-precision-style judge) | No |
 | `RetrievalGroundedness` | Is the *response* supported by the retrieved context? (hallucination check) | No |
-| `RetrievalSufficiency` | Does the retrieved context contain the facts needed? (a context-recall-style judge) | **Yes**: `expected_facts` or `expected_response` in `expectations` |
+| `RetrievalSufficiency` | Does the retrieved context contain the facts needed? (a context-recall-style judge) | **Yes**: ground truth (expected facts) in `expectations`; check current docs for exact keys |
 
 You can also write deterministic **custom scorers** (for example, recall@k against a labeled list of expected document IDs) and log them in the same run. Exact helpers vary by MLflow version. Check current docs before relying on a built-in name other than the three above.
 
@@ -445,7 +445,7 @@ results = index.similarity_search(
 6. Pipeline order: Volume → parse → filter → chunk with a unique id → Delta table in UC → enable CDF → Delta Sync index → append/MERGE then sync.
 7. A per-record fact (order date, balance) belongs in a **structured lookup keyed by ID**, not a vector store, and not in fine-tuning.
 8. Precision@k = relevant-retrieved / k, recall@k = relevant-retrieved / all-relevant, MRR = mean 1/rank-of-first-hit, NDCG rewards relevant items ranked higher.
-9. MLflow 3 retrieval scorers: `RetrievalRelevance` and `RetrievalGroundedness` need no labels; `RetrievalSufficiency` needs `expected_facts`/`expected_response`.
+9. MLflow 3 retrieval scorers: `RetrievalRelevance` and `RetrievalGroundedness` need no labels; `RetrievalSufficiency` needs ground truth (expected facts in `expectations`).
 10. Hybrid search (BM25 + vectors, RRF) fixes exact-term misses. Re-ranking with a cross-encoder reorders top-K but cannot add missing documents.
 
 ## Official docs
