@@ -172,9 +172,9 @@
   difficulty: 3
   question: |
     A Generative AI Engineer writes chunked text to main.kb.chunks with columns doc_id, chunk_text and
-    source_path, then tries to create a Delta Sync index on a standard endpoint with Databricks-managed
-    embeddings. Index creation and incremental sync do not work as intended. Which TWO changes are
-    required?
+    source_path (the table has neither Change Data Feed nor row tracking enabled), then tries to create
+    a Delta Sync index on a standard endpoint with Databricks-managed embeddings. Index creation and
+    incremental sync do not work as intended. Which TWO changes are required?
   choices:
     A: Add a column that uniquely identifies each chunk (for example, doc_id plus chunk sequence) and use it as the primary key.
     B: Precompute embeddings and store them in an array column, because Delta Sync indexes cannot compute embeddings.
@@ -186,6 +186,8 @@
     A Delta Sync index needs a primary key that identifies each row, and doc_id repeats across a
     document's chunks, so a unique chunk id is needed (A). On standard endpoints the source table must
     use Change Data Feed so the index can pick up inserts, updates and deletes incrementally (D).
+    (Tables with row tracking enabled get a change data feed automatically, which is why the question
+    states that neither is enabled.)
     B is wrong because a Delta Sync index can compute embeddings from a text column through
     embedding_model_endpoint_name. C is wrong because the source is a Unity Catalog Delta table and DBFS root is not required.
     E is wrong because partitioning has no bearing on index creation or sync.
@@ -261,7 +263,7 @@
     denominators. C uses k as the recall denominator too. D reports the reciprocal rank (the first hit is
     at rank 1, so 1/1 = 1.0) as precision.
   refs:
-    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/predefined-judge-scorers
+    - https://mlflow.org/docs/latest/api_reference/python_api/mlflow.metrics.html
 
 - id: D2-012
   domain: 2

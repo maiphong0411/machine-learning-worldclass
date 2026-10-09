@@ -51,7 +51,7 @@
     everyone; a disclaimer is not a control. E removes governance instead of adding it.
   refs:
     - https://docs.databricks.com/aws/en/tables/row-and-column-filters
-    - https://docs.databricks.com/gcp/en/mlflow3/genai/tracing/redact-pii-otel-traces
+    - https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_mask
 
 - id: D5-003
   domain: 5
@@ -76,7 +76,7 @@
     legitimate messages (order numbers, dates) and hurts the success rate. D only affects the
     final answer; the card number would still be stored in the input spans of the trace.
   refs:
-    - https://docs.databricks.com/gcp/en/mlflow3/genai/tracing/redact-pii-otel-traces
+    - https://docs.databricks.com/aws/en/mlflow3/genai/tracing/govern-redact
 
 - id: D5-004
   domain: 5
@@ -108,9 +108,10 @@
   objective: "Select guardrail techniques to protect against malicious user inputs to a Gen AI application"
   difficulty: 2
   question: |
-    A Generative AI Engineer serves a public-facing chatbot through a pay-per-token Foundation
-    Model API endpoint. Users are submitting jailbreak prompts to obtain harmful content, and some
-    users send thousands of requests per minute to brute-force the jailbreaks.
+    A Generative AI Engineer serves an internal chatbot through a pay-per-token Foundation Model
+    API endpoint; each employee queries the endpoint with their own Databricks identity. Users are
+    submitting jailbreak prompts to obtain harmful content, and some users send thousands of
+    requests per minute to brute-force the jailbreaks.
     Which TWO controls should the engineer configure?
   choices:
     A: Raise the endpoint's max_tokens so refusals are explained in more detail
@@ -177,7 +178,7 @@
     violation. D is wrong because embedding and retrieving the text is still using the licensed
     content, and the retrieved chunks are shown in the prompt and answers.
   refs:
-    - https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/supported-models
+    - https://creativecommons.org/licenses/by-nc/4.0/
 
 - id: D5-008
   domain: 5
@@ -200,8 +201,8 @@
     A shows what was queried, not where the indexed data came from. C is manual and goes stale as
     pipelines change. D describes the embedding model's license, not the provenance of the data.
   refs:
-    - https://docs.databricks.com/aws/en/ai-gateway/ai-governance
-    - https://docs.databricks.com/aws/en/tables/row-and-column-filters
+    - https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage
+    - https://docs.databricks.com/aws/en/database-objects/tags
 
 - id: D5-009
   domain: 5
@@ -225,7 +226,7 @@
     makes toxic chunks less likely to appear and also removes useful context. C is expensive and
     still leaves the toxic text in the prompt.
   refs:
-    - https://docs.databricks.com/aws/en/ai-gateway/configure-ai-gateway-endpoints
+    - https://docs.databricks.com/aws/en/ai-search/ai-search
 
 - id: D5-010
   domain: 5

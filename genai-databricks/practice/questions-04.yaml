@@ -272,7 +272,7 @@
   objective: "Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements."
   difficulty: 3
   question: |
-    A patent-search tool must index about 2 billion paragraph embeddings. New patents are loaded once
+    A patent-search tool must index about 800 million 768-dimension paragraph embeddings. New patents are loaded once
     each night. Around 10 analysts use it, and responses within 1 to 2 seconds are acceptable. The top
     priority is keeping infrastructure cost low. Which configuration fits best?
   choices:
@@ -282,8 +282,8 @@
     D: "Standard endpoint with a Direct Vector Access index updated through upserts"
   answer: [A]
   explanation: |
-    Two billion vectors exceeds standard endpoint capacity, while storage-optimized endpoints scale past a
-    billion vectors at lower cost; their extra latency and lower QPS ceiling are acceptable for a few
+    800 million vectors exceeds standard endpoint capacity (about 320 million at 768 dimensions), while
+    storage-optimized endpoints hold about a billion vectors at 768 dimensions at lower cost; their extra latency and lower QPS ceiling are acceptable for a few
     analysts with a 1 to 2 second budget. Nightly data means a triggered sync after the load is enough
     and cheapest. B cannot hold the corpus and continuous sync wastes money on nightly data. C is not
     possible because storage-optimized endpoints support only triggered sync. D is far beyond Direct

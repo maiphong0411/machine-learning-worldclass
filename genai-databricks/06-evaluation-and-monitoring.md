@@ -592,7 +592,9 @@ flowchart LR
 - Rate limits are set as **QPM** (queries per minute) or **TPM** (tokens per minute) at the
   **endpoint**, **user** (default per user), **specific user or service principal**, or **user
   group** level; the stricter of QPM/TPM wins. The docs state TPM limits **cannot** be applied
-  to endpoints serving custom models or agents, so agent endpoints use QPM.
+  to endpoints serving custom models or agents, and the legacy feature table lists rate
+  limiting as unsupported on agent endpoints. So control tokens on the LLM endpoint the agent
+  calls.
 - `system.serving.endpoint_usage` records per-request input/output token counts, `requester`,
   `status_code`, and a `usage_context` map for end-user attribution; join to
   `system.serving.served_entities` on `served_entity_id`. Only account admins can query them
@@ -601,8 +603,8 @@ flowchart LR
   a request header) and session metadata for grouping by agent or session.
 
 **Practical design for an agent:** log the agent endpoint with inference tables and traces;
-put **usage tracking and TPM rate limits on the LLM endpoint(s) the agent calls**; put QPM
-limits on the agent endpoint itself if needed.
+put **usage tracking and TPM rate limits on the LLM endpoint(s) the agent calls**. If you also
+need per-user request throttling for the agent, do it in the app or API layer in front of it.
 
 ### 8.4 Worked example
 
@@ -611,8 +613,8 @@ batch script floods the agent and spikes spend. Steps:
 
 1. Query the usage system table grouped by `requester` for the LLM endpoint: the team's service
    principal accounts for 70% of tokens.
-2. Add a **TPM rate limit for that service principal** on the LLM endpoint, and a **QPM** limit
-   per user on the agent endpoint.
+2. Add a **TPM rate limit for that service principal** on the LLM endpoint the agent calls
+   (not on the agent endpoint, which cannot take TPM limits).
 3. Use the agent's inference table and traces to confirm normal users' latency recovered.
 4. Move the batch workload to `ai_query()` (cost control, §9).
 
@@ -794,7 +796,7 @@ expectations to the evaluation dataset; (5) changes the prompt and re-runs
 8. Production monitoring = registered scorers `.start()`ed with a `sample_rate` on live traces;
    use reference-free judges.
 9. Inference tables = what was said; usage system tables = how much and by whom; rate limits
-   (QPM/TPM; agents QPM only) = caps.
+   (QPM/TPM; TPM can't be set on custom-model or agent endpoints) = caps.
 10. Cost levers: smaller model, fewer tokens, caching, `ai_query()` batch, pay-per-token vs
     provisioned throughput by utilisation, scale to zero, rate limits, usage tags and budgets.
     SME feedback: rubric + calibration → labeling sessions → expectations and aligned judges.

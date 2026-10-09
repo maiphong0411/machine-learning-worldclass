@@ -113,6 +113,7 @@
     LLM to do arithmetic, which is prone to hallucinated numbers and stale data. C loses detail and cannot
     answer arbitrary slices. D bakes in stale numbers and still cannot compute new aggregates reliably.
   refs:
+    - https://docs.databricks.com/aws/en/genie/
     - https://docs.databricks.com/aws/en/generative-ai/agent-bricks/multi-agent-supervisor
 
 - id: D1-006

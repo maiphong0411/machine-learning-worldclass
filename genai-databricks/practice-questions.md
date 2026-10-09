@@ -148,7 +148,7 @@ The answers are aggregates over structured tables, so the right task is generati
 LLM to do arithmetic, which is prone to hallucinated numbers and stale data. C loses detail and cannot
 answer arbitrary slices. D bakes in stale numbers and still cannot compute new aggregates reliably.
 
-Docs: [1](https://docs.databricks.com/aws/en/generative-ai/agent-bricks/multi-agent-supervisor)
+Docs: [1](https://docs.databricks.com/aws/en/genie/) · [2](https://docs.databricks.com/aws/en/generative-ai/agent-bricks/multi-agent-supervisor)
 
 </details>
 
@@ -634,9 +634,9 @@ Docs: [1](https://docs.databricks.com/aws/en/vector-search/create-vector-search)
 *Objective: Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog*
 
 A Generative AI Engineer writes chunked text to main.kb.chunks with columns doc_id, chunk_text and
-source_path, then tries to create a Delta Sync index on a standard endpoint with Databricks-managed
-embeddings. Index creation and incremental sync do not work as intended. Which TWO changes are
-required?
+source_path (the table has neither Change Data Feed nor row tracking enabled), then tries to create
+a Delta Sync index on a standard endpoint with Databricks-managed embeddings. Index creation and
+incremental sync do not work as intended. Which TWO changes are required?
 
 - **A.** Add a column that uniquely identifies each chunk (for example, doc_id plus chunk sequence) and use it as the primary key.
 - **B.** Precompute embeddings and store them in an array column, because Delta Sync indexes cannot compute embeddings.
@@ -650,6 +650,8 @@ required?
 A Delta Sync index needs a primary key that identifies each row, and doc_id repeats across a
 document's chunks, so a unique chunk id is needed (A). On standard endpoints the source table must
 use Change Data Feed so the index can pick up inserts, updates and deletes incrementally (D).
+(Tables with row tracking enabled get a change data feed automatically, which is why the question
+states that neither is enabled.)
 B is wrong because a Delta Sync index can compute embeddings from a text column through
 embedding_model_endpoint_name. C is wrong because the source is a Unity Catalog Delta table and DBFS root is not required.
 E is wrong because partitioning has no bearing on index creation or sync.
@@ -733,7 +735,7 @@ retrieved chunks by all relevant chunks in the corpus: 2 / 4 = 0.50 (A). B swaps
 denominators. C uses k as the recall denominator too. D reports the reciprocal rank (the first hit is
 at rank 1, so 1/1 = 1.0) as precision.
 
-Docs: [1](https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/predefined-judge-scorers)
+Docs: [1](https://mlflow.org/docs/latest/api_reference/python_api/mlflow.metrics.html)
 
 </details>
 
@@ -957,7 +959,7 @@ format, but they do not search for better prompts. B is wrong because the proble
 retrieval. C is wrong because versioning templates does not solve the trial-and-error
 optimisation problem.
 
-Docs: [1](https://docs.databricks.com/aws/en/generative-ai/agent-framework/multi-agent-genie)
+Docs: [1](https://docs.databricks.com/aws/en/generative-ai/dspy/) · [2](https://dspy.ai/learn/optimization/optimizers/)
 
 </details>
 
@@ -1297,8 +1299,8 @@ Docs: [1](https://docs.databricks.com/aws/en/machine-learning/foundation-model-a
 
 *Objective: Implement LLM guardrails to prevent negative outcomes*
 
-A Generative AI Engineer is deploying a public-facing chat assistant on a Databricks model
-serving endpoint. Requirements are to block requests and responses involving violent crime or
+A Generative AI Engineer is deploying a public-facing chat assistant that calls an LLM through a
+Databricks Foundation Model APIs serving endpoint. Requirements are to block requests and responses involving violent crime or
 self-harm, and to detect credit card numbers and email addresses so they are not passed
 through. Which approach meets these requirements with the least custom code?
 
@@ -1312,8 +1314,10 @@ through. Which approach meets these requirements with the least custom code?
 
 AI Gateway guardrails on serving endpoints provide safety filtering, built with Llama Guard,
 and PII detection that can block or mask. They apply to requests and responses, and they are
-configured rather than coded. (The docs mark them Public Preview; the newer Unity AI Gateway
-expresses guardrails as policies.) B is wrong because a system prompt is an instruction, not
+configured rather than coded. (The docs mark them Public Preview and support them on external-model
+and Foundation Model API endpoints, not on agent or custom-model endpoints; AI Gateway for serving
+endpoints is now labelled legacy, and the newer Unity Gateway expresses guardrails as service
+policies.) B is wrong because a system prompt is an instruction, not
 enforcement, and it can be bypassed. C is wrong because temperature does not filter content.
 D is wrong because it is costly and still probabilistic, and it does not mask PII in inputs.
 
@@ -1421,8 +1425,8 @@ notes, and production traffic is steady and latency-sensitive. Which serving cho
 
 Provisioned throughput gives dedicated capacity with performance guarantees, is recommended for
 production, supports fine-tuned and custom weights, and is available with compliance
-certifications such as HIPAA. A is wrong because pay-per-token serves the hosted catalogue,
-not your fine-tuned weights, and is aimed at prototyping. B fails governance and compliance.
+certifications such as HIPAA. A is wrong because pay-per-token (including its priority mode)
+serves Databricks' hosted model catalogue, not your fine-tuned weights. B fails governance and compliance.
 D is wrong because the workload is interactive, not batch.
 
 Docs: [1](https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/)
@@ -1693,7 +1697,7 @@ serialising clients and keeps the definition in readable source. A repeats the f
 approach. B does not apply to an orchestration agent with tool clients. D breaks
 reproducibility and the link between the logged model and what is deployed.
 
-Docs: [1](https://mlflow.org/docs/latest/genai/serving/responses-agent/)
+Docs: [1](https://mlflow.org/docs/latest/ml/model/models-from-code/) · [2](https://mlflow.org/docs/latest/genai/serving/responses-agent/)
 
 </details>
 
@@ -2158,7 +2162,7 @@ Docs: [1](https://docs.databricks.com/aws/en/vector-search/query-vector-search)
 
 *Objective: Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements.*
 
-A patent-search tool must index about 2 billion paragraph embeddings. New patents are loaded once
+A patent-search tool must index about 800 million 768-dimension paragraph embeddings. New patents are loaded once
 each night. Around 10 analysts use it, and responses within 1 to 2 seconds are acceptable. The top
 priority is keeping infrastructure cost low. Which configuration fits best?
 
@@ -2170,8 +2174,8 @@ priority is keeping infrastructure cost low. Which configuration fits best?
 <details>
 <summary>Answer: A</summary>
 
-Two billion vectors exceeds standard endpoint capacity, while storage-optimized endpoints scale past a
-billion vectors at lower cost; their extra latency and lower QPS ceiling are acceptable for a few
+800 million vectors exceeds standard endpoint capacity (about 320 million at 768 dimensions), while
+storage-optimized endpoints hold about a billion vectors at 768 dimensions at lower cost; their extra latency and lower QPS ceiling are acceptable for a few
 analysts with a 1 to 2 second budget. Nightly data means a triggered sync after the load is enough
 and cheapest. B cannot hold the corpus and continuous sync wastes money on nightly data. C is not
 possible because storage-optimized endpoints support only triggered sync. D is far beyond Direct
@@ -2640,7 +2644,7 @@ per-request latency and keeps PII out of the index (D). B adds work to every req
 risks the latency objective, and the raw PII still sits in the index. C exposes PII to
 everyone; a disclaimer is not a control. E removes governance instead of adding it.
 
-Docs: [1](https://docs.databricks.com/aws/en/tables/row-and-column-filters) · [2](https://docs.databricks.com/gcp/en/mlflow3/genai/tracing/redact-pii-otel-traces)
+Docs: [1](https://docs.databricks.com/aws/en/tables/row-and-column-filters) · [2](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_mask)
 
 </details>
 
@@ -2668,7 +2672,7 @@ is unchanged. A removes the observability needed for evaluation and monitoring. 
 legitimate messages (order numbers, dates) and hurts the success rate. D only affects the
 final answer; the card number would still be stored in the input spans of the trace.
 
-Docs: [1](https://docs.databricks.com/gcp/en/mlflow3/genai/tracing/redact-pii-otel-traces)
+Docs: [1](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/govern-redact)
 
 </details>
 
@@ -2703,9 +2707,10 @@ Docs: [1](https://docs.databricks.com/aws/en/generative-ai/agent-framework/deplo
 
 *Objective: Select guardrail techniques to protect against malicious user inputs to a Gen AI application*
 
-A Generative AI Engineer serves a public-facing chatbot through a pay-per-token Foundation
-Model API endpoint. Users are submitting jailbreak prompts to obtain harmful content, and some
-users send thousands of requests per minute to brute-force the jailbreaks.
+A Generative AI Engineer serves an internal chatbot through a pay-per-token Foundation Model
+API endpoint; each employee queries the endpoint with their own Databricks identity. Users are
+submitting jailbreak prompts to obtain harmful content, and some users send thousands of
+requests per minute to brute-force the jailbreaks.
 Which TWO controls should the engineer configure?
 
 - **A.** Raise the endpoint's max_tokens so refusals are explained in more detail
@@ -2779,7 +2784,7 @@ availability with permission. B is wrong because a disclaimer does not cure a li
 violation. D is wrong because embedding and retrieving the text is still using the licensed
 content, and the retrieved chunks are shown in the prompt and answers.
 
-Docs: [1](https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/supported-models)
+Docs: [1](https://creativecommons.org/licenses/by-nc/4.0/)
 
 </details>
 
@@ -2805,7 +2810,7 @@ and continuously what data produced the index source table; tags record each sou
 A shows what was queried, not where the indexed data came from. C is manual and goes stale as
 pipelines change. D describes the embedding model's license, not the provenance of the data.
 
-Docs: [1](https://docs.databricks.com/aws/en/ai-gateway/ai-governance) · [2](https://docs.databricks.com/aws/en/tables/row-and-column-filters)
+Docs: [1](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage) · [2](https://docs.databricks.com/aws/en/database-objects/tags)
 
 </details>
 
@@ -2832,7 +2837,7 @@ keeps it clean. A relies on the model's compliance on every request and fails si
 makes toxic chunks less likely to appear and also removes useful context. C is expensive and
 still leaves the toxic text in the prompt.
 
-Docs: [1](https://docs.databricks.com/aws/en/ai-gateway/configure-ai-gateway-endpoints)
+Docs: [1](https://docs.databricks.com/aws/en/ai-search/ai-search)
 
 </details>
 
@@ -3216,8 +3221,8 @@ Which TWO actions should the engineer take?
 
 Usage tracking writes per-request token counts and the requester to system tables, which is
 the right source for consumption by principal (C). A rate limit for a specific service
-principal caps that team's usage, and TPM limits belong on the LLM endpoint because agent
-endpoints support only QPM limits (E). A is wrong because inference tables record payloads,
+principal caps that team's usage, and TPM limits belong on the LLM endpoint because TPM
+rate limits cannot be applied to endpoints that serve agents or custom models (E). A is wrong because inference tables record payloads,
 and token accounting by requester is the purpose of usage tables. B affects idle capacity, not
 one team's consumption. D is an evaluation tool, not an enforcement mechanism.
 

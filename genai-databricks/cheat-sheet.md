@@ -60,7 +60,7 @@ model *proposes* tool calls, and your code executes them.
   | SQL-native | `ai_parse_document` |
 
 - **Clean after parsing, before chunking:** remove headers, footers, navigation, duplicates and OCR noise.
-- **Order of operations:** Volume → parse → filter → chunk with id → Delta table → **enable CDF** → Delta Sync index → sync.
+- **Order of operations:** Volume → parse → filter → chunk with id → Delta table → **enable CDF** (automatic if the table has row tracking) → Delta Sync index → sync.
 - **Retrieval metrics:**
   - precision@k = relevant ∩ retrieved / k
   - recall@k = relevant ∩ retrieved / all relevant
@@ -79,8 +79,8 @@ model *proposes* tool calls, and your code executes them.
 | Agent interface | **`ResponsesAgent`** (`ChatAgent` is legacy), logged as **models from code** |
 | Debugging | **MLflow Tracing**: check the retriever span first when answers are ungrounded |
 | Structured data inside a multi-agent system | **Genie Space** / Genie Conversation API as a subagent |
-| Prototype or spiky traffic | FM API **pay-per-token** |
-| Steady production, fine-tuned weights, guarantees | **Provisioned throughput** |
+| Getting started, spiky traffic | FM API **pay-per-token** (opt-in **priority** tier for latency-sensitive real-time apps) |
+| Production with throughput or performance guarantees, fine-tuned weights, HIPAA | **Provisioned throughput** |
 | Embedding model, cost first | **Smallest model whose max input ≥ your longest chunk** |
 | Pick a model from a hub | Model card: task, license, languages, context length, base vs instruct; `system.ai` in UC |
 
@@ -174,7 +174,7 @@ service principal, and user auth uses `x-forwarded-access-token`. Never put toke
 - **What each AI Gateway feature tells you:**
   - **Inference tables:** *what was said*. UC Delta tables, best-effort delivery, for analysis rather than real-time alerts.
   - **Usage tables:** *how much, and by whom*.
-  - **Rate limits:** caps in QPM/TPM; agent endpoints get QPM only.
+  - **Rate limits:** caps in QPM/TPM. TPM limits can't be set on custom-model or agent endpoints, so put token limits on the LLM endpoint the agent calls.
 - **Metrics to watch:**
   - p95/p99 latency and time to first token for interactive apps
   - throughput and cost for batch

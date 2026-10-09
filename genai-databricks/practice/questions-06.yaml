@@ -312,8 +312,8 @@
   explanation: |
     Usage tracking writes per-request token counts and the requester to system tables, which is
     the right source for consumption by principal (C). A rate limit for a specific service
-    principal caps that team's usage, and TPM limits belong on the LLM endpoint because agent
-    endpoints support only QPM limits (E). A is wrong because inference tables record payloads,
+    principal caps that team's usage, and TPM limits belong on the LLM endpoint because TPM
+    rate limits cannot be applied to endpoints that serve agents or custom models (E). A is wrong because inference tables record payloads,
     and token accounting by requester is the purpose of usage tables. B affects idle capacity, not
     one team's consumption. D is an evaluation tool, not an enforcement mechanism.
   refs:

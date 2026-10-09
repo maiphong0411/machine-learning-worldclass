@@ -826,8 +826,9 @@ the answer and cites both. The MLflow trace shows each sub-agent as a span.
    Reasoning → chain-of-thought.
 7. **Guardrails are layered:** input filter → system prompt constraints → least-privilege tools →
    output filter → refusal. AI Gateway safety uses **Llama Guard**, and PII detection can block or mask.
-8. **Pay-per-token** for prototypes and spiky traffic. **Provisioned throughput** for production
-   guarantees, fine-tuned or custom weights, and HIPAA.
+8. **Pay-per-token** to get started and for spiky traffic (a **priority** tier serves
+   latency-sensitive real-time apps). **Provisioned throughput** for production guarantees,
+   fine-tuned or custom weights, and HIPAA.
 9. **Embedding context:** smallest model with **max input ≥ longest chunk** when cost or latency
    rules. The same model is used for queries and documents.
 10. **Model cards:** task tag, license, languages, base vs instruct, context length. **`system.ai`**

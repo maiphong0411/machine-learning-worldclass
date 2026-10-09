@@ -75,7 +75,8 @@
     retrieval. C is wrong because versioning templates does not solve the trial-and-error
     optimisation problem.
   refs:
-    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/multi-agent-genie
+    - https://docs.databricks.com/aws/en/generative-ai/dspy/
+    - https://dspy.ai/learn/optimization/optimizers/
 
 - id: D3-004
   domain: 3
@@ -379,8 +380,8 @@
   objective: "Implement LLM guardrails to prevent negative outcomes"
   difficulty: 2
   question: |
-    A Generative AI Engineer is deploying a public-facing chat assistant on a Databricks model
-    serving endpoint. Requirements are to block requests and responses involving violent crime or
+    A Generative AI Engineer is deploying a public-facing chat assistant that calls an LLM through a
+    Databricks Foundation Model APIs serving endpoint. Requirements are to block requests and responses involving violent crime or
     self-harm, and to detect credit card numbers and email addresses so they are not passed
     through. Which approach meets these requirements with the least custom code?
   choices:
@@ -392,8 +393,10 @@
   explanation: |
     AI Gateway guardrails on serving endpoints provide safety filtering, built with Llama Guard,
     and PII detection that can block or mask. They apply to requests and responses, and they are
-    configured rather than coded. (The docs mark them Public Preview; the newer Unity AI Gateway
-    expresses guardrails as policies.) B is wrong because a system prompt is an instruction, not
+    configured rather than coded. (The docs mark them Public Preview and support them on external-model
+    and Foundation Model API endpoints, not on agent or custom-model endpoints; AI Gateway for serving
+    endpoints is now labelled legacy, and the newer Unity Gateway expresses guardrails as service
+    policies.) B is wrong because a system prompt is an instruction, not
     enforcement, and it can be bypassed. C is wrong because temperature does not filter content.
     D is wrong because it is costly and still probabilistic, and it does not mask PII in inputs.
   refs:
@@ -490,8 +493,8 @@
   explanation: |
     Provisioned throughput gives dedicated capacity with performance guarantees, is recommended for
     production, supports fine-tuned and custom weights, and is available with compliance
-    certifications such as HIPAA. A is wrong because pay-per-token serves the hosted catalogue,
-    not your fine-tuned weights, and is aimed at prototyping. B fails governance and compliance.
+    certifications such as HIPAA. A is wrong because pay-per-token (including its priority mode)
+    serves Databricks' hosted model catalogue, not your fine-tuned weights. B fails governance and compliance.
     D is wrong because the workload is interactive, not batch.
   refs:
     - https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/
@@ -735,6 +738,7 @@
     approach. B does not apply to an orchestration agent with tool clients. D breaks
     reproducibility and the link between the logged model and what is deployed.
   refs:
+    - https://mlflow.org/docs/latest/ml/model/models-from-code/
     - https://mlflow.org/docs/latest/genai/serving/responses-agent/
 
 - id: D3-031
