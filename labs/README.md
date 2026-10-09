@@ -23,3 +23,7 @@ for f in labs/*.py; do python3 "$f" > /dev/null && echo "PASS $f" || echo "FAIL 
 **How to work on a lab:** read the module first, run the lab, then do the
 "student exercises" listed at the bottom of each file. Exercises change the code;
 the asserts must keep passing.
+
+**Stuck?** In Claude Code, `/hint <lab> <exercise>` gives one hint level at a time
+(concept → location → pseudocode) instead of the solution, and `/review-my-code <file>`
+reviews your finished code. See [the AI-assisted learning guide](../docs/ai-assisted-learning.md).

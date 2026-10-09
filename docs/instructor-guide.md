@@ -59,7 +59,15 @@ can follow it as a script.
 | "An A/B test win is always real" | M12 (power, novelty, network effects, multiple testing) |
 | "LLMs replace the need for ML fundamentals" | M08, case study 07 (retrieval, evaluation, cost) |
 
-## 5. Adapting the course
+## 5. AI coding assistants
+
+The repo ships tutor rules ([`AGENTS.md`](../AGENTS.md)) and Claude Code study skills
+([`.claude/skills/`](../.claude/skills/)). Students use them for hints, quizzes, code review and
+mock interviews; the assessment policy and AI-native exercises are in
+[ai-assisted-learning.md](ai-assisted-learning.md). Keep quizzes, the midterm, the graded mock
+interview and the capstone defense assistant-free so the grade measures unaided ability.
+
+## 6. Adapting the course
 
 - **Shorter (10 weeks):** merge M01+M02, skip M06, teach four case studies (01, 02, 04, 07).
 - **Graduate level:** add derivations from the *Further reading* of each module and require
