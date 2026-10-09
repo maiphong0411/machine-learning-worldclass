@@ -69,9 +69,15 @@ def rewrite_links(text: str, from_file: str) -> str:
     return "".join(p if p.startswith("```") else LINK.sub(sub, p) for p in parts)
 
 
+CONTENTS_LIST = re.compile(r"^## Contents\n\n(?:(?:\d+\.|-|\s) .*\n)+\n?(?:---\n\n)?", re.M)
+
+
 def adapt(text: str, from_file: str) -> str:
     text = rewrite_links(text, from_file)
-    return text.replace("<details>", '<details markdown="1">')
+    # A hand-written "Contents" link list repeats the site's own table of contents.
+    text = CONTENTS_LIST.sub("", text)
+    # Only real <details> blocks (at line start), not ones quoted in `inline code`.
+    return re.sub(r"^<details>", '<details markdown="1">', text, flags=re.M)
 
 
 def lab_page(lab: Path) -> str:
