@@ -15,7 +15,11 @@ theme:
   name: material
   custom_dir: overrides
   features:
+    # One tab per course part, so the sidebar only lists the current part's pages.
+    - navigation.tabs
+    - navigation.indexes
     - navigation.sections
+    - navigation.path
     - navigation.top
     - navigation.footer
     - search.highlight
@@ -66,53 +70,55 @@ extra_javascript:
   - assets/js/progress.js
   - assets/js/lab-runner.js
 
+# Short, consistent titles here; each page keeps its full title as its heading.
 nav:
-  - Home: index.md
-  - Syllabus: SYLLABUS.md
-  - My progress: progress.md
-  - "Part I–II: Core algorithms":
+  - Start:
+      - Home: index.md
+      - Syllabus: SYLLABUS.md
+      - My progress: progress.md
+  - Core algorithms:
       - modules/index.md
-      - modules/01-ml-first-principles.md
-      - modules/02-math-toolkit.md
-      - modules/03-linear-and-logistic-regression.md
-      - modules/04-evaluation-and-data.md
-      - modules/05-trees-and-ensembles.md
-      - modules/06-unsupervised-learning.md
-      - modules/07-neural-networks.md
-      - modules/08-embeddings-and-transformers.md
-      - modules/09-recommendation-and-ranking.md
-  - "Labs (run in browser)":
+      - "M01 What is learning?": modules/01-ml-first-principles.md
+      - "M02 Math toolkit": modules/02-math-toolkit.md
+      - "M03 Linear & logistic regression": modules/03-linear-and-logistic-regression.md
+      - "M04 Evaluation, data & features": modules/04-evaluation-and-data.md
+      - "M05 Trees & ensembles": modules/05-trees-and-ensembles.md
+      - "M06 Unsupervised learning": modules/06-unsupervised-learning.md
+      - "M07 Neural networks": modules/07-neural-networks.md
+      - "M08 Embeddings & transformers": modules/08-embeddings-and-transformers.md
+      - "M09 Recommendation & ranking": modules/09-recommendation-and-ranking.md
+  - Labs:
       - labs/index.md
-      - labs/01_gradient_descent.md
-      - labs/02_linear_logistic_regression.md
-      - labs/03_metrics_from_scratch.md
-      - labs/04_decision_tree_and_boosting.md
-      - labs/05_kmeans_pca.md
-      - labs/06_neural_network_backprop.md
-      - labs/07_attention_and_embeddings.md
-      - labs/08_matrix_factorization.md
-  - "Part III: ML systems":
+      - "Lab 1 Gradient descent": labs/01_gradient_descent.md
+      - "Lab 2 Linear & logistic regression": labs/02_linear_logistic_regression.md
+      - "Lab 3 Metrics": labs/03_metrics_from_scratch.md
+      - "Lab 4 Trees & boosting": labs/04_decision_tree_and_boosting.md
+      - "Lab 5 k-means & PCA": labs/05_kmeans_pca.md
+      - "Lab 6 Backpropagation": labs/06_neural_network_backprop.md
+      - "Lab 7 Attention & embeddings": labs/07_attention_and_embeddings.md
+      - "Lab 8 Matrix factorization": labs/08_matrix_factorization.md
+  - ML systems:
       - system-design/index.md
-      - system-design/10-ml-system-design-framework.md
-      - system-design/11-data-and-training-infrastructure.md
-      - system-design/12-serving-monitoring-experimentation.md
-  - "Part IV: Case studies":
+      - "M10 System design framework": system-design/10-ml-system-design-framework.md
+      - "M11 Data & training infrastructure": system-design/11-data-and-training-infrastructure.md
+      - "M12 Serving, monitoring & A/B testing": system-design/12-serving-monitoring-experimentation.md
+  - Case studies:
       - case-studies/index.md
-      - case-studies/01-fraud-detection.md
-      - case-studies/02-news-feed-recommendation.md
-      - case-studies/03-search-ranking.md
-      - case-studies/04-ad-click-prediction.md
-      - case-studies/05-content-moderation.md
-      - case-studies/06-eta-prediction.md
-      - case-studies/07-rag-assistant.md
-      - case-studies/08-visual-search.md
-  - "Part V: Assessment":
-      - assessments/quizzes.md
-      - assessments/mock-interview-bank.md
-      - assessments/ml-system-design-rubric.md
-      - assessments/capstone-project.md
+      - "1 Fraud detection": case-studies/01-fraud-detection.md
+      - "2 News feed ranking": case-studies/02-news-feed-recommendation.md
+      - "3 Product search": case-studies/03-search-ranking.md
+      - "4 Ad click prediction": case-studies/04-ad-click-prediction.md
+      - "5 Content moderation": case-studies/05-content-moderation.md
+      - "6 ETA prediction": case-studies/06-eta-prediction.md
+      - "7 RAG support assistant": case-studies/07-rag-assistant.md
+      - "8 Visual search": case-studies/08-visual-search.md
+  - Assessment:
+      - Quizzes & midterm: assessments/quizzes.md
+      - Mock interview bank: assessments/mock-interview-bank.md
+      - System design rubric: assessments/ml-system-design-rubric.md
+      - Capstone project: assessments/capstone-project.md
   - Guides:
-      - docs/ai-assisted-learning.md
-      - docs/instructor-guide.md
-      - docs/tracking-and-analytics.md
-      - docs/module-template.md
+      - AI study partner: docs/ai-assisted-learning.md
+      - Instructor guide: docs/instructor-guide.md
+      - Tracking & analytics: docs/tracking-and-analytics.md
+      - Module template: docs/module-template.md
