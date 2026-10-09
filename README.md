@@ -35,8 +35,16 @@ because that is exactly what the ML system design interview tests.
 | [`case-studies/`](case-studies/) | Part IV: eight end-to-end real-world system designs |
 | [`labs/`](labs/) | Runnable NumPy implementations from scratch, one per algorithm family |
 | [`assessments/`](assessments/) | Quizzes, mock interview bank, grading rubric, capstone project |
-| [`docs/`](docs/) | Instructor guide, authoring template, and the [AI-assisted learning guide](docs/ai-assisted-learning.md) |
+| [`docs/`](docs/) | Instructor guide, authoring template, the [AI-assisted learning guide](docs/ai-assisted-learning.md), and [tracking & analytics](docs/tracking-and-analytics.md) |
+| [`website/`](website/) | Builds the course website (MkDocs Material, in-browser lab runner, progress tracker) |
 | [`.claude/skills/`](.claude/skills/), [`AGENTS.md`](AGENTS.md) | AI study partner setup: tutor rules for any coding assistant + Claude Code slash commands |
+
+## Course website
+
+**https://maiphong0411.github.io/machine-learning-worldclass/** has the same material as a
+searchable site with rendered diagrams and math. Labs **run in the browser** (Python + NumPy
+via Pyodide, nothing to install), and a **My progress** page tracks which pages you've finished.
+The site is built from [`website/`](website/) by GitHub Actions on every push to `main`.
 
 ## Quick start
 

@@ -1,0 +1,118 @@
+# Course website. Build locally:
+#   pip install -r website/requirements.txt
+#   python3 website/build.py && mkdocs serve -f website/mkdocs.yml
+site_name: "Machine Learning: First Principles to Production"
+site_description: Core ML algorithms from first principles, real-world ML systems, and ML system design interview preparation.
+site_url: https://maiphong0411.github.io/machine-learning-worldclass/
+repo_url: https://github.com/maiphong0411/machine-learning-worldclass
+repo_name: machine-learning-worldclass
+edit_uri: ""
+
+docs_dir: _src
+site_dir: _site
+
+theme:
+  name: material
+  custom_dir: overrides
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      # GitHub-compatible heading ids, so in-page links work on both GitHub and the site.
+      slugify: !!python/object/apply:pymdownx.slugs.slugify { kwds: { case: lower } }
+  - pymdownx.details
+  - pymdownx.arithmatex: { generic: true }
+  - pymdownx.highlight: { anchor_linenums: true }
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra:
+  # Optional cookieless analytics: create a free site at https://www.goatcounter.com and put
+  # its code here (e.g. "ml-worldclass"). Leave empty to disable. See docs/tracking-and-analytics.md.
+  goatcounter: ""
+
+extra_css:
+  - assets/css/extra.css
+extra_javascript:
+  - assets/js/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+  - assets/js/progress.js
+  - assets/js/lab-runner.js
+
+nav:
+  - Home: index.md
+  - Syllabus: SYLLABUS.md
+  - My progress: progress.md
+  - "Part I–II: Core algorithms":
+      - modules/index.md
+      - modules/01-ml-first-principles.md
+      - modules/02-math-toolkit.md
+      - modules/03-linear-and-logistic-regression.md
+      - modules/04-evaluation-and-data.md
+      - modules/05-trees-and-ensembles.md
+      - modules/06-unsupervised-learning.md
+      - modules/07-neural-networks.md
+      - modules/08-embeddings-and-transformers.md
+      - modules/09-recommendation-and-ranking.md
+  - "Labs (run in browser)":
+      - labs/index.md
+      - labs/01_gradient_descent.md
+      - labs/02_linear_logistic_regression.md
+      - labs/03_metrics_from_scratch.md
+      - labs/04_decision_tree_and_boosting.md
+      - labs/05_kmeans_pca.md
+      - labs/06_neural_network_backprop.md
+      - labs/07_attention_and_embeddings.md
+      - labs/08_matrix_factorization.md
+  - "Part III: ML systems":
+      - system-design/index.md
+      - system-design/10-ml-system-design-framework.md
+      - system-design/11-data-and-training-infrastructure.md
+      - system-design/12-serving-monitoring-experimentation.md
+  - "Part IV: Case studies":
+      - case-studies/index.md
+      - case-studies/01-fraud-detection.md
+      - case-studies/02-news-feed-recommendation.md
+      - case-studies/03-search-ranking.md
+      - case-studies/04-ad-click-prediction.md
+      - case-studies/05-content-moderation.md
+      - case-studies/06-eta-prediction.md
+      - case-studies/07-rag-assistant.md
+      - case-studies/08-visual-search.md
+  - "Part V: Assessment":
+      - assessments/quizzes.md
+      - assessments/mock-interview-bank.md
+      - assessments/ml-system-design-rubric.md
+      - assessments/capstone-project.md
+  - Guides:
+      - docs/ai-assisted-learning.md
+      - docs/instructor-guide.md
+      - docs/tracking-and-analytics.md
+      - docs/module-template.md

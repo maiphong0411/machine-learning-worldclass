@@ -9,6 +9,10 @@ python3 -m pip install numpy
 for f in labs/*.py; do python3 "$f" > /dev/null && echo "PASS $f" || echo "FAIL $f"; done
 ```
 
+**No setup?** Every lab also runs in your browser on the
+[course website](https://maiphong0411.github.io/machine-learning-worldclass/labs/): edit, press Run,
+and get ✅ when the asserts pass.
+
 | Lab | File | Module | You will build |
 |---|---|---|---|
 | 1 | [01_gradient_descent.py](01_gradient_descent.py) | M01–M02 | GD, SGD, momentum, Adam |

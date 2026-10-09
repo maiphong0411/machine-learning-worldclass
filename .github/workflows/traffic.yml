@@ -1,0 +1,47 @@
+# GitHub keeps repository traffic (views, clones, referrers, popular pages) for only 14 days.
+# This job saves a daily snapshot to the `traffic-data` branch so the history is kept.
+# Requires a repository secret TRAFFIC_TOKEN: a fine-grained personal access token for this
+# repository with "Administration: read-only" permission (GITHUB_TOKEN cannot read traffic).
+name: Archive traffic stats
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip when TRAFFIC_TOKEN is not configured
+        id: check
+        env:
+          TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "TRAFFIC_TOKEN secret not set; see docs/tracking-and-analytics.md. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
+      - name: Fetch traffic and commit it to the traffic-data branch
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          cp scripts/archive_traffic.py "$RUNNER_TEMP/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin traffic-data; then
+            git fetch -q origin traffic-data && git checkout -q traffic-data
+          else
+            git checkout -q --orphan traffic-data && git rm -rfq .
+          fi
+          python3 "$RUNNER_TEMP/archive_traffic.py" .
+          git add -- *.csv
+          git commit -q -m "Traffic snapshot $(date -u +%F)" || { echo "No changes."; exit 0; }
+          git push origin traffic-data

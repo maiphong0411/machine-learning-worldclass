@@ -1,2 +1,9 @@
 # Personal study logs written by the AI study skills (hints, quizzes, interviews)
 .study/
+
+# Generated course website
+website/_src/
+website/_site/
+
+# Python bytecode
+__pycache__/
