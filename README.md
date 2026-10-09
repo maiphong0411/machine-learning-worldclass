@@ -35,7 +35,8 @@ because that is exactly what the ML system design interview tests.
 | [`case-studies/`](case-studies/) | Part IV: eight end-to-end real-world system designs |
 | [`labs/`](labs/) | Runnable NumPy implementations from scratch, one per algorithm family |
 | [`assessments/`](assessments/) | Quizzes, mock interview bank, grading rubric, capstone project |
-| [`docs/`](docs/) | Instructor guide and the authoring template every module follows |
+| [`docs/`](docs/) | Instructor guide, authoring template, and the [AI-assisted learning guide](docs/ai-assisted-learning.md) |
+| [`.claude/skills/`](.claude/skills/), [`AGENTS.md`](AGENTS.md) | AI study partner setup: tutor rules for any coding assistant + Claude Code slash commands |
 
 ## Quick start
 
@@ -43,6 +44,25 @@ because that is exactly what the ML system design interview tests.
 python3 -m pip install numpy        # the only dependency for the labs
 python3 labs/01_gradient_descent.py # each lab runs standalone and self-checks
 ```
+
+## Study with an AI assistant
+
+The repo is pre-configured so that Claude Code (or any assistant that reads `AGENTS.md`)
+acts as a **tutor, not a solution generator**. You still do the thinking; the assistant
+gives graded hints, quizzes you, reviews your code, and plays the interviewer:
+
+```text
+claude                         # start Claude Code in the repo root, then:
+/tutor bias-variance           # first-principles explanation, Socratic
+/hint 6 2                      # one hint level at a time for lab 6, exercise 2
+/review-my-code labs/06_neural_network_backprop.py
+/quiz-me M04                   # adaptive retrieval practice
+/explain-back attention        # Feynman technique: you explain, it finds the gaps
+/mock-interview P10            # timed ML system design interview, scored with the rubric
+```
+
+See [docs/ai-assisted-learning.md](docs/ai-assisted-learning.md) for the learning science,
+setup for other assistants, and what is allowed in each assessment.
 
 All diagrams are [Mermaid](https://mermaid.js.org/) and render natively on GitHub.
 

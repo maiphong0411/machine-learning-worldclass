@@ -52,7 +52,7 @@ flowchart TD
 
 | Week | Lecture topic | Reading | Lab | Real-world anchor |
 |---|---|---|---|---|
-| 1 | M01 What is learning? Generalization, bias–variance | [M01](modules/01-ml-first-principles.md) | Lab 0: setup, NumPy refresher | Spam filter: why rules stop scaling |
+| 1 | M01 What is learning? Generalization, bias–variance | [M01](modules/01-ml-first-principles.md) | Lab 0: setup, NumPy refresher, AI study partner demo | Spam filter: why rules stop scaling |
 | 2 | M02 Optimization (GD/SGD/Adam), MLE, regularization as priors | [M02](modules/02-math-toolkit.md) | [Lab 1](labs/01_gradient_descent.py) | Why every model is "minimize a loss" |
 | 3 | M03 Linear & logistic regression | [M03](modules/03-linear-and-logistic-regression.md) | [Lab 2](labs/02_linear_logistic_regression.py) | House prices; click-through prediction |
 | 4 | M04 Metrics, validation, leakage, features | [M04](modules/04-evaluation-and-data.md) | [Lab 3](labs/03_metrics_from_scratch.py) | Medical screening: recall vs precision |
@@ -77,6 +77,21 @@ flowchart TD
 | Midterm (written) | 20% | Derivations + algorithm tracing |
 | Mock ML system design interview | 20% | Graded with [the rubric](assessments/ml-system-design-rubric.md) |
 | Capstone project | 25% | Design doc + working prototype + presentation |
+
+## AI study partner policy
+
+AI coding assistants are **encouraged for learning and restricted for assessment**. The repo
+configures them as tutors (graded hints, quizzes, code review, mock interviewer) rather than
+solution generators; see [docs/ai-assisted-learning.md](docs/ai-assisted-learning.md).
+
+| Assessment | Assistant use |
+|---|---|
+| Reading, lectures, practice | 🟢 Open — any study mode |
+| Labs, capstone code & design doc | 🟡 Tutor mode only, with an `AI-USE.md` disclosure |
+| Quizzes, midterm, graded mock interview, capstone defense | 🔴 No assistant |
+
+Lab 0 (week 1) includes a live demo of the hint ladder. One AI-native exercise is run in each part
+(weeks 4, 7, 11; see [§6 of the guide](docs/ai-assisted-learning.md#6-ai-native-exercises)).
 
 ## How each module is structured
 
