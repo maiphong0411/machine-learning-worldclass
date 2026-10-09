@@ -4,3 +4,6 @@
 # Generated course website
 website/_src/
 website/_site/
+
+# Python bytecode
+__pycache__/
