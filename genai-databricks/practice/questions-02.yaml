@@ -282,8 +282,8 @@
   explanation: |
     RetrievalRelevance judges whether each retrieved chunk is relevant to the request (B), and
     RetrievalGroundedness judges whether the response is supported by the retrieved context (D).
-    Neither needs ground truth. RetrievalSufficiency requires expected_facts or expected_response in
-    the expectations, which the team does not have (A). Correctness also needs ground truth and judges the
+    Neither needs ground truth. RetrievalSufficiency requires ground truth (expected facts supplied in
+    the expectations), which the team does not have (A). Correctness also needs ground truth and judges the
     answer, not retrieval (C). Safety checks for harmful content, not retrieval quality (E).
   refs:
     - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/predefined-judge-scorers
