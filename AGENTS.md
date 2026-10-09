@@ -65,5 +65,8 @@ done but the learning does not happen (the student "offloads" the thinking). So:
 - Labs: `labs/0X_*.py`, NumPy only, ending in `assert`s; student exercises are comments at the
   bottom of each file.
 - Assessments: `assessments/` (quizzes, mock interview bank, rubric, capstone).
+- Databricks GenAI Engineer Associate exam prep: `genai-databricks/` (one page per exam domain,
+  cheat sheet). Practice questions are YAML in `genai-databricks/practice/`; after editing them run
+  `python3 scripts/render_questions.py` to regenerate `practice-questions.md`.
 - Diagrams are Mermaid; quote any node label containing punctuation (see `docs/module-template.md`).
 - A student's personal study log (if they use one) lives in `.study/` and is git-ignored.

@@ -22,3 +22,47 @@
 .progress-summary { font-size: 1.1em; font-weight: 600; }
 .progress-list { list-style: none; padding-left: 0; }
 .progress-list li { margin-left: 0; }
+
+/* ---------- GenAI practice exam ---------- */
+.exam-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
+.exam-card { border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.exam-card h3 { margin: 0; }
+.exam-card p { margin: 0; flex: 1; font-size: 0.75rem; }
+.exam-card .md-button { margin: 0; cursor: pointer; }
+.exam-card .md-button:disabled { opacity: 0.4; cursor: default; }
+.exam-select { width: 100%; padding: 0.3em; font-size: 0.75rem; background: var(--md-default-bg-color); color: var(--md-default-fg-color); border: 1px solid var(--md-default-fg-color--lighter); border-radius: 4px; }
+.exam-muted { color: var(--md-default-fg-color--light); font-size: 0.75rem; }
+.exam-header { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; font-weight: 600; border-bottom: 1px solid var(--md-default-fg-color--lightest); padding-bottom: 0.5rem; }
+.exam-clock { font-variant-numeric: tabular-nums; }
+.exam-clock--low { color: #c62828; }
+.exam-objective { font-size: 0.7rem; color: var(--md-default-fg-color--light); font-style: italic; }
+.exam-choices { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
+.exam-choice { display: block; padding: 0.6rem 0.8rem; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; cursor: pointer; }
+.exam-choice input { margin-right: 0.5rem; }
+.exam-choice:hover { border-color: var(--md-accent-fg-color); }
+.exam-choice--right { border-color: #2e7d32 !important; background: rgba(46, 125, 50, 0.08); }
+.exam-choice--wrong { border-color: #c62828 !important; background: rgba(198, 40, 40, 0.08); }
+.exam-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+.exam-actions .md-button { margin: 0; padding: 0.3em 1em; font-size: 0.75rem; cursor: pointer; }
+.exam-actions .md-button:disabled { opacity: 0.4; cursor: default; }
+.exam-submit { margin-left: auto !important; }
+.exam-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.exam-nav__item { width: 2rem; height: 2rem; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 4px; background: transparent; color: inherit; cursor: pointer; font-size: 0.7rem; }
+.exam-nav__item--answered { background: var(--md-default-fg-color--lightest); }
+.exam-nav__item--current { outline: 2px solid var(--md-accent-fg-color); }
+.exam-nav__item--flagged { border-color: #f9a825; border-width: 2px; }
+.exam-nav__item--right { background: rgba(46, 125, 50, 0.25); }
+.exam-nav__item--wrong { background: rgba(198, 40, 40, 0.25); }
+.exam-explain { border-left: 4px solid; padding: 0.2rem 1rem; margin: 1rem 0; border-radius: 4px; background: var(--md-code-bg-color); }
+.exam-explain--right { border-color: #2e7d32; }
+.exam-explain--wrong { border-color: #c62828; }
+.exam-refs { font-size: 0.7rem; }
+.exam-score { text-align: center; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 2px solid; }
+.exam-score--good { border-color: #2e7d32; }
+.exam-score--low { border-color: #ef6c00; }
+.exam-score__big { font-size: 2.5rem; font-weight: 700; }
+.exam-bar { display: inline-block; width: 6rem; height: 0.6rem; background: var(--md-default-fg-color--lightest); border-radius: 3px; vertical-align: middle; }
+.exam-bar span { display: block; height: 100%; background: var(--md-accent-fg-color); border-radius: 3px; }
+.exam-review { margin: 0.4rem 0; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 4px; padding: 0.3rem 0.8rem; }
+.exam-review summary { cursor: pointer; font-size: 0.75rem; }
+.exam-review li { list-style: none; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid transparent; }

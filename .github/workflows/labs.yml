@@ -33,3 +33,15 @@ jobs:
           python-version: "3.12"
       - run: pip install numpy
       - run: timeout 300 python3 labs/${{ matrix.lab }}.py
+
+  question-bank:
+    # Validates the GenAI certification practice questions (schema, answers, ids) and checks
+    # that genai-databricks/practice-questions.md was regenerated after editing the YAML.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - run: python3 scripts/render_questions.py --check
