@@ -1,0 +1,35 @@
+# Runs every lab's self-checks. On the course repo this guards the reference labs; on a
+# student's fork or GitHub Classroom repo it is the autograder: green = all labs pass.
+name: Labs
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  labs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lab:
+          - 01_gradient_descent
+          - 02_linear_logistic_regression
+          - 03_metrics_from_scratch
+          - 04_decision_tree_and_boosting
+          - 05_kmeans_pca
+          - 06_neural_network_backprop
+          - 07_attention_and_embeddings
+          - 08_matrix_factorization
+    name: ${{ matrix.lab }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: timeout 300 python3 labs/${{ matrix.lab }}.py

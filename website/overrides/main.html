@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block scripts %}
+  {{ super() }}
+  {#- Optional, cookieless page-view counts. Set extra.goatcounter in mkdocs.yml to enable. -#}
+  {% if config.extra.goatcounter %}
+    <script data-goatcounter="https://{{ config.extra.goatcounter }}.goatcounter.com/count"
+            async src="https://gc.zgo.at/count.js"></script>
+  {% endif %}
+{% endblock %}

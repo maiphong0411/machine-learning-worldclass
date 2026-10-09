@@ -67,7 +67,15 @@ mock interviews; the assessment policy and AI-native exercises are in
 [ai-assisted-learning.md](ai-assisted-learning.md). Keep quizzes, the midterm, the graded mock
 interview and the capstone defense assistant-free so the grade measures unaided ability.
 
-## 6. Adapting the course
+## 6. Website, autograding and usage tracking
+
+The course website (GitHub Pages, built from `website/`) lets students run labs in the browser and
+track their progress. The `Labs` GitHub Actions workflow runs every lab's asserts on each push, so
+with GitHub Classroom it works as a per-student autograder. To see whether the course is being
+used, and how, follow [tracking-and-analytics.md](tracking-and-analytics.md). It separates
+reach, engagement and learning, and covers the privacy defaults.
+
+## 7. Adapting the course
 
 - **Shorter (10 weeks):** merge M01+M02, skip M06, teach four case studies (01, 02, 04, 07).
 - **Graduate level:** add derivations from the *Further reading* of each module and require
