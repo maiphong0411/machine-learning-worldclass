@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Safety net: while Settings -> Pages -> Source is "Deploy from a branch", GitHub also runs
+  # its own Jekyll build on every push. If it finishes after this workflow, it replaces the
+  # MkDocs site with plain pages. Redeploying when that build completes means MkDocs always
+  # publishes last. (This workflow's own deploys do not trigger GitHub's build, so no loop.)
+  workflow_run:
+    workflows: ["pages build and deployment", "pages-build-deployment"]
+    types: [completed]
 
 permissions:
   contents: read
