@@ -10,7 +10,7 @@
 **Prerequisites:** [M08 Embeddings & transformers](../modules/08-embeddings-and-transformers.md)
 (especially [§3.8 Prompting vs fine-tuning vs RAG](../modules/08-embeddings-and-transformers.md#38-prompting-vs-fine-tuning-vs-rag)) ·
 [Case study 7 — RAG assistant](../case-studies/07-rag-assistant.md) ·
-**Practice:** [`practice/questions-03.yaml`](practice/questions-03.yaml) (36 questions)
+**Practice:** [Domain 3 practice questions](practice-questions.md#domain-3) (36 questions)
 
 > **Naming is in flux (October 2026).** Databricks renames products often. The exam guide says
 > "Genie Spaces", "Agent Framework", "AI Gateway" and "Vector Search". Some current docs pages say

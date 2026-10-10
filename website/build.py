@@ -74,12 +74,46 @@ def rewrite_links(text: str, from_file: str) -> str:
 CONTENTS_LIST = re.compile(r"^## Contents\n\n(?:(?:\d+\.|-|\s) .*\n)+\n?(?:---\n\n)?", re.M)
 
 
+# Blockquote callouts ("> **Exam trap:** ...") become Material admonitions on the site.
+# Order matters: the first keyword found in the label picks the style.
+CALLOUT_STYLES = [("exam trap", "warning"), ("trap", "warning"), ("mistake", "failure"),
+                  ("big idea", "abstract"), ("naming", "info"), ("why this matters", "tip")]
+CALLOUT = re.compile(r"^> \*\*(?P<label>[^*]{1,60}?)[:.]\*\*[ ]?(?P<rest>.*)$")
+
+
+def callouts_to_admonitions(text: str) -> str:
+    lines, out, i, fence = text.split("\n"), [], 0, False
+    while i < len(lines):
+        line = lines[i]
+        if line.lstrip().startswith("```"):
+            fence = not fence
+        m = None if fence else CALLOUT.match(line)
+        if not m:
+            out.append(line)
+            i += 1
+            continue
+        label = m.group("label").strip()
+        style = next((st for key, st in CALLOUT_STYLES if key in label.lower()), "note")
+        body = [m.group("rest")]
+        i += 1
+        while i < len(lines) and lines[i].startswith(">") and not CALLOUT.match(lines[i]):
+            body.append(lines[i][2:] if lines[i].startswith("> ") else lines[i][1:])
+            i += 1
+        out.append(f'!!! {style} "{label}"')
+        out += [f"    {b}" if b.strip() else "" for b in body]
+        out.append("")
+    return "\n".join(out)
+
+
 def adapt(text: str, from_file: str) -> str:
     text = rewrite_links(text, from_file)
     # A hand-written "Contents" link list repeats the site's own table of contents.
     text = CONTENTS_LIST.sub("", text)
     # Only real <details> blocks (at line start), not ones quoted in `inline code`.
-    return re.sub(r"^<details>", '<details markdown="1">', text, flags=re.M)
+    text = re.sub(r"^<details>", '<details markdown="1">', text, flags=re.M)
+    if from_file.startswith("genai-databricks/"):
+        text = callouts_to_admonitions(text)
+    return text
 
 
 def lab_page(lab: Path) -> str:
@@ -114,7 +148,8 @@ def main() -> None:
     # GenAI certification practice exam: the page, plus the question bank as JSON for exam.js.
     shutil.copy(ROOT / "website" / "genai-practice-exam.md", SRC / "genai-databricks" / "practice-exam.md")
     subprocess.run([sys.executable, str(ROOT / "scripts" / "render_questions.py"), "--check",
-                    "--json", str(SRC / "assets" / "genai-questions.json")], check=True)
+                    "--json", str(SRC / "assets" / "genai-questions.json"),
+                    "--site-md", str(SRC / "genai-databricks" / "practice-questions.md")], check=True)
     print(f"Assembled {len(PAGES)} pages and {len(LABS)} lab runners into {SRC.relative_to(ROOT)}")
 
 

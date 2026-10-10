@@ -6,6 +6,7 @@ Usage:
   python3 scripts/render_questions.py            # validate + write genai-databricks/practice-questions.md
   python3 scripts/render_questions.py --check    # validate + fail if the Markdown is out of date (CI)
   python3 scripts/render_questions.py --json OUT # also write the question bank as JSON (website)
+  python3 scripts/render_questions.py --site-md OUT # also write the MkDocs-flavoured page (website)
 """
 
 import argparse
@@ -74,7 +75,16 @@ def validate(questions: list[dict]) -> list[str]:
     return errors
 
 
-def render_md(questions: list[dict]) -> str:
+def esc(text: str) -> str:
+    """Escape <, > and & outside `code spans`, so text like <email> shows instead of vanishing as HTML."""
+    parts = re.split(r"(`[^`]*`)", text.strip())
+    return "".join(p if p.startswith("`") else p.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                   for p in parts)
+
+
+def render_md(questions: list[dict], site: bool = False) -> str:
+    """Markdown for GitHub (<details> answers) or, with site=True, MkDocs Material components
+    (question admonitions with collapsible "Show answer" blocks)."""
     out = [
         "# Practice questions — Databricks Generative AI Engineer Associate",
         "",
@@ -92,24 +102,22 @@ def render_md(questions: list[dict]) -> str:
     for d, (name, weight) in DOMAINS.items():
         out.append(f"| [{d}. {name}](#domain-{d}) | {weight}% | {len(by_domain[d])} |")
     for d, (name, weight) in DOMAINS.items():
-        out += ["", f'<a id="domain-{d}"></a>', "", f"## Domain {d} — {name} ({weight}%)", ""]
+        heading = f"## Domain {d} — {name} ({weight}%)"
+        out += ["", f"{heading} {{ #domain-{d} }}"] if site else ["", f'<a id="domain-{d}"></a>', "", heading]
+        out.append("")
         for q in by_domain[d]:
             kind = " · *choose two*" if len(q["answer"]) > 1 else ""
-            out += [f"### {q['id']}{kind}", "", f"*Objective: {q['objective']}*", "", q["question"].strip(), ""]
-            out += [f"- **{k}.** {v}" for k, v in q["choices"].items()]
             refs = " · ".join(f"[{i + 1}]({r})" for i, r in enumerate(q["refs"]))
-            out += [
-                "",
-                "<details>",
-                f"<summary>Answer: {', '.join(q['answer'])}</summary>",
-                "",
-                q["explanation"].strip(),
-                "",
-                f"Docs: {refs}",
-                "",
-                "</details>",
-                "",
-            ]
+            choices = [f"- **{k}.** {esc(v)}" for k, v in q["choices"].items()]
+            out += [f"### {q['id']}{kind}", "", f"*Objective: {esc(q['objective'])}*", "", esc(q["question"]), ""]
+            out += choices + [""]
+            body = [f"**Answer: {', '.join(q['answer'])}**", "", esc(q["explanation"]), "", f"Docs: {refs}"]
+            if site:
+                out.append('??? success "Show answer"')
+                out += [f"    {line}" if line else "" for line in "\n".join(body).splitlines()]
+                out.append("")
+            else:
+                out += ["<details>", "<summary>Show answer</summary>", ""] + body + ["", "</details>", ""]
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -126,6 +134,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--json")
+    ap.add_argument("--site-md", help="also write the MkDocs-flavoured page here (website)")
     args = ap.parse_args()
 
     questions = load()
@@ -143,6 +152,8 @@ def main() -> int:
         OUT_MD.write_text(md)
     if args.json:
         Path(args.json).write_text(to_json(questions))
+    if args.site_md:
+        Path(args.site_md).write_text(render_md(questions, site=True))
     counts = {d: sum(q["domain"] == d for q in questions) for d in DOMAINS}
     print(f"{len(questions)} questions OK {counts}")
     return 0
