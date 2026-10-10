@@ -1,0 +1,254 @@
+- id: D5-001
+  domain: 5
+  objective: "Use masking techniques as guard rails to meet a performance objective"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer runs an internal IT helpdesk assistant that must keep at least 96%
+    of sessions answered without a human handoff. Logs show that 7% of user messages include an
+    employee's personal phone number or email address, which security says must never reach the
+    LLM provider or the logs. The answers never depend on those values.
+    Which approach meets both the security requirement and the success target?
+  choices:
+    A: Block every request in which PII is detected and return a default message
+    B: Detect PII at the endpoint and mask it with placeholders before the request reaches the model, also masking PII in responses
+    C: Add a system prompt instruction telling the model never to repeat phone numbers or email addresses
+    D: Lower the temperature so the model is less likely to reproduce personal details
+  answer: [B]
+  explanation: |
+    Masking replaces each PII span with a placeholder such as [EMAIL], so the value never reaches
+    the model or the logs while the request still gets answered; since answers do not need the
+    values, the success rate is preserved. A is wrong because blocking 7% of sessions caps the
+    answered rate near 93%, below the 96% target. C is wrong because the model still receives the
+    PII, so it reaches the provider and the logs; a prompt rule is not masking. D is wrong because
+    temperature does not remove data from the input and gives no privacy guarantee.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-gateway/configure-ai-gateway-endpoints
+    - https://docs.databricks.com/aws/en/ai-gateway/overview-serving-endpoints
+
+- id: D5-002
+  domain: 5
+  objective: "Use masking techniques as guard rails to meet a performance objective"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is building a RAG index over a Unity Catalog table of support
+    tickets. The table has a customer_email column and a free-text body that sometimes contains
+    phone numbers. Retrieval latency must not increase, and only the support-admins group may
+    ever see raw emails when querying the table.
+    Which TWO actions should the engineer take?
+  choices:
+    A: Apply a Unity Catalog column mask on customer_email that returns the raw value only for members of the support-admins group
+    B: Keep the raw data in the index and add a post-retrieval regex step on every request to strip emails and phone numbers
+    C: Grant SELECT on the table to all users and rely on a disclaimer in the assistant's answers
+    D: Redact phone numbers in the body text in the ingestion pipeline, for example with an AI function such as ai_mask, before chunking and embedding
+    E: Move the tickets to a CSV file in a volume so Unity Catalog permissions no longer apply
+  answer: [A, D]
+  explanation: |
+    A column mask is a SQL UDF that returns the original or masked value depending on the caller,
+    which meets the "only support-admins see raw emails" rule without duplicating tables (A).
+    Redacting PII in the free text before embedding is done once, offline, so it adds no
+    per-request latency and keeps PII out of the index (D). B adds work to every request, which
+    risks the latency objective, and the raw PII still sits in the index. C exposes PII to
+    everyone; a disclaimer is not a control. E removes governance instead of adding it.
+  refs:
+    - https://docs.databricks.com/aws/en/tables/row-and-column-filters
+    - https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_mask
+
+- id: D5-003
+  domain: 5
+  objective: "Use masking techniques as guard rails to meet a performance objective"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer enabled MLflow tracing on a customer-service agent. Auditors find
+    that the stored traces contain customers' card numbers that users typed into the chat. The
+    agent's answer quality and latency must not change, but the traces must not keep the card
+    numbers.
+    What should the engineer do?
+  choices:
+    A: Disable tracing for the agent entirely
+    B: Block all chat messages that contain digits
+    C: Register a span processor that redacts card numbers from span inputs and outputs before traces are exported
+    D: Ask the LLM to remove card numbers from its own final answer
+  answer: [C]
+  explanation: |
+    MLflow span processors run in the agent process and edit span inputs and outputs before the
+    trace is exported, so the stored trace never holds the raw value while the agent's behaviour
+    is unchanged. A removes the observability needed for evaluation and monitoring. B blocks many
+    legitimate messages (order numbers, dates) and hurts the success rate. D only affects the
+    final answer; the card number would still be stored in the input spans of the trace.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/tracing/govern-redact
+
+- id: D5-004
+  domain: 5
+  objective: "Select guardrail techniques to protect against malicious user inputs to a Gen AI application"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer is deploying a procurement agent that can read purchase orders and
+    call a tool that approves payments. A red-team test shows that a user can phrase a request
+    so the agent calls the approval tool for an invoice the user does not own.
+    Which change most directly reduces the impact of this attack?
+  choices:
+    A: Switch to a larger LLM that follows the system prompt more reliably
+    B: Add a sentence to the system prompt stating that the agent must never approve unauthorized invoices
+    C: Increase the number of retrieved purchase orders so the agent has more context
+    D: Run the tool with least-privilege credentials scoped to the calling user and require explicit human confirmation before any payment approval
+  answer: [D]
+  explanation: |
+    The risk is a harmful action, so the control must sit outside the model: if the tool only
+    runs with the caller's own permissions and a human must confirm approvals, a successful prompt
+    attack still cannot approve someone else's invoice. A and B depend on the model obeying,
+    which is exactly what prompt injection defeats; the attacker uses the same text channel as the
+    system prompt. C changes retrieval breadth and does nothing to restrict actions.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/deploy-agent
+    - https://docs.databricks.com/aws/en/ai-gateway/ai-governance
+
+- id: D5-005
+  domain: 5
+  objective: "Select guardrail techniques to protect against malicious user inputs to a Gen AI application"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer serves an internal chatbot through a pay-per-token Foundation Model
+    API endpoint; each employee queries the endpoint with their own Databricks identity. Users are
+    submitting jailbreak prompts to obtain harmful content, and some users send thousands of
+    requests per minute to brute-force the jailbreaks.
+    Which TWO controls should the engineer configure?
+  choices:
+    A: Raise the endpoint's max_tokens so refusals are explained in more detail
+    B: Enable the safety guardrail on the endpoint to filter unsafe content in requests and responses
+    C: Turn on scale to zero for the endpoint
+    D: Add few-shot examples of polite answers to the prompt
+    E: Configure per-user rate limits on the endpoint
+  answer: [B, E]
+  explanation: |
+    The safety guardrail (Databricks documents Llama Guard as the legacy safety filter) blocks
+    unsafe requests and responses and returns a default message, addressing harmful content (B).
+    Per-user rate limits cap how fast any single user can retry attacks and protect cost (E).
+    A increases output size and cost without stopping anything. C is a cost setting for idle
+    endpoints, not a security control. D shapes style but does not stop a determined jailbreak.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-gateway/configure-ai-gateway-endpoints
+    - https://docs.databricks.com/aws/en/ai-gateway/overview-serving-endpoints
+
+- id: D5-006
+  domain: 5
+  objective: "Select guardrail techniques to protect against malicious user inputs to a Gen AI application"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer deployed an agent with Agent Framework. The agent calls a
+    Foundation Model API endpoint for generation. The security team wants AI Gateway safety
+    filtering applied, but the engineer finds the legacy AI Guardrails settings are not supported
+    on the agent's own serving endpoint.
+    What is the best way to apply the safety filter?
+  choices:
+    A: Enable the safety guardrail on the Foundation Model API endpoint that the agent calls, and keep checks in agent code where needed
+    B: Redeploy the agent as a custom model endpoint, which supports AI Guardrails
+    C: Skip safety filtering, because agents are protected automatically by Unity Catalog
+    D: Add the word "safe" to every user prompt before it reaches the agent
+  answer: [A]
+  explanation: |
+    In the legacy AI Gateway feature matrix, AI Guardrails are supported on external model,
+    pay-per-token and provisioned throughput endpoints but not on Databricks agent or custom model
+    endpoints, so the filter belongs on the LLM endpoint the agent calls, with extra checks in the
+    agent code if required. B is wrong because custom model endpoints do not support guardrails
+    either. C is wrong because Unity Catalog governs data access, not content safety. D is not a
+    control at all.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-gateway/overview-serving-endpoints
+
+- id: D5-007
+  domain: 5
+  objective: "Use legal/licensing requirements for data sources to avoid legal risk"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer at a software company wants to improve a paid product's
+    documentation assistant by adding a public Q&A dataset to the RAG index. The dataset's card
+    says it is released under CC BY-NC 4.0.
+    What should the engineer do?
+  choices:
+    A: Use the dataset, since it is publicly downloadable
+    B: Use the dataset but add a disclaimer to every answer that cites it
+    C: Exclude the dataset and find a source whose license permits commercial use, or license the content
+    D: Use the dataset only for embeddings, because embeddings are not covered by copyright
+  answer: [C]
+  explanation: |
+    A non-commercial (NC) license forbids use in a commercial product, so the dataset cannot feed
+    a paid assistant; the fix is a commercially licensed or owned source. A confuses public
+    availability with permission. B is wrong because a disclaimer does not cure a license
+    violation. D is wrong because embedding and retrieving the text is still using the licensed
+    content, and the retrieved chunks are shown in the prompt and answers.
+  refs:
+    - https://creativecommons.org/licenses/by-nc/4.0/
+
+- id: D5-008
+  domain: 5
+  objective: "Use legal/licensing requirements for data sources to avoid legal risk"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer must prove to the legal team that a production RAG index was built
+    only from three approved, licensed Unity Catalog tables, and must keep that proof current as
+    pipelines change.
+    Which Databricks capability best supports this?
+  choices:
+    A: The Vector Search query logs
+    B: Unity Catalog lineage from the source tables to the table that feeds the index, with license tags on each source
+    C: A Python comment at the top of the chunking notebook listing the sources
+    D: The model card of the embedding model
+  answer: [B]
+  explanation: |
+    Unity Catalog lineage records which tables feed downstream tables, so it shows automatically
+    and continuously what data produced the index source table; tags record each source's license.
+    A shows what was queried, not where the indexed data came from. C is manual and goes stale as
+    pipelines change. D describes the embedding model's license, not the provenance of the data.
+  refs:
+    - https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage
+    - https://docs.databricks.com/aws/en/database-objects/tags
+
+- id: D5-009
+  domain: 5
+  objective: "Recommend an alternative for problematic text mitigation in a data source feeding a GenAI application"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer finds that a shopping assistant sometimes quotes insulting language
+    from customer reviews that are indexed for RAG. About 2% of the 3 million reviews contain such
+    language. The index is a Delta Sync index on a Delta table.
+    What is the most effective fix?
+  choices:
+    A: Add an instruction to the prompt asking the model not to repeat offensive words
+    B: Lower the number of retrieved chunks from 10 to 3
+    C: Fine-tune the LLM to ignore offensive context
+    D: Score reviews with a toxicity classifier in the ingestion pipeline, remove or redact the flagged ones in the source table, and let the index sync
+  answer: [D]
+  explanation: |
+    The problem is in the data, so fix it once upstream: cleaning the source table removes the
+    offending text from the Delta Sync index for every future request, and scanning new reviews
+    keeps it clean. A relies on the model's compliance on every request and fails silently. B only
+    makes toxic chunks less likely to appear and also removes useful context. C is expensive and
+    still leaves the toxic text in the prompt.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-search/ai-search
+
+- id: D5-010
+  domain: 5
+  objective: "Recommend an alternative for problematic text mitigation in a data source feeding a GenAI application"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer built an HR policy assistant on top of an employee discussion forum.
+    Reviewers find that many forum posts contain outdated policies, personal opinions, and biased
+    statements, and the assistant repeats them. The HR department maintains an official, reviewed
+    policy handbook.
+    What should the engineer recommend?
+  choices:
+    A: Replace the forum with the official policy handbook as the primary source, keeping forum content out of the index unless it is reviewed
+    B: Keep the forum and add an output safety filter
+    C: Increase the chunk size so each forum post has more context
+    D: Add the forum post's date to each chunk and ask the model to prefer recent posts
+  answer: [A]
+  explanation: |
+    When most of a source is untrusted or low quality, the strongest mitigation is to replace it
+    with a curated, authoritative source; the handbook is reviewed and owned by HR. B catches
+    toxic content at best but not outdated or opinionated policy text. C does not change what the
+    text says. D still feeds opinions into the prompt and relies on the model to judge them, and a
+    recent post can still be wrong.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-gateway/ai-governance

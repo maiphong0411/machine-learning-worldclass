@@ -35,6 +35,7 @@ because that is exactly what the ML system design interview tests.
 | [`case-studies/`](case-studies/) | Part IV: eight end-to-end real-world system designs |
 | [`labs/`](labs/) | Runnable NumPy implementations from scratch, one per algorithm family |
 | [`assessments/`](assessments/) | Quizzes, mock interview bank, grading rubric, capstone project |
+| [`genai-databricks/`](genai-databricks/) | Exam prep for the **Databricks Generative AI Engineer Associate** certification: one page per exam domain, cheat sheet, 120 practice questions, timed mock exams on the website |
 | [`docs/`](docs/) | Instructor guide, authoring template, the [AI-assisted learning guide](docs/ai-assisted-learning.md), and [tracking & analytics](docs/tracking-and-analytics.md) |
 | [`website/`](website/) | Builds the course website (MkDocs Material, in-browser lab runner, progress tracker) |
 | [`.claude/skills/`](.claude/skills/), [`AGENTS.md`](AGENTS.md) | AI study partner setup: tutor rules for any coding assistant + Claude Code slash commands |
@@ -73,6 +74,13 @@ See [docs/ai-assisted-learning.md](docs/ai-assisted-learning.md) for the learnin
 setup for other assistants, and what is allowed in each assessment.
 
 All diagrams are [Mermaid](https://mermaid.js.org/) and render natively on GitHub.
+
+## Certification track: Databricks Generative AI Engineer Associate
+
+[`genai-databricks/`](genai-databricks/README.md) applies the course's GenAI material (M08,
+case study 07) to the Databricks platform. It follows the six domains of the exam guide that has
+been live since March 2026, and adds a question bank and a timed
+[practice exam](https://maiphong0411.github.io/machine-learning-worldclass/genai-databricks/practice-exam/).
 
 ## Suggested path for a student short on time
 

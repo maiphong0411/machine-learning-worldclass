@@ -1,0 +1,388 @@
+- id: D2-001
+  domain: 2
+  objective: "Apply a chunking strategy for a given document structure and model constraints"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is chunking 2,000 technical reports of 6,000 tokens each, using a
+    token-based splitter with a chunk size of 500 tokens and an overlap of 100 tokens. Assuming the
+    last partial chunk is kept, approximately how many records will be written to the chunk table?
+  choices:
+    A: "24,000"
+    B: "30,000"
+    C: "20,000"
+    D: "15,000"
+  answer: [B]
+  explanation: |
+    With overlap, the splitter advances by the stride c - o = 500 - 100 = 400 tokens. One document
+    yields ceil((6000 - 500) / 400) + 1 = 14 + 1 = 15 chunks, so 2,000 documents give 30,000 records (B).
+    A (24,000) is 12 chunks per document, which is 6,000 / 500 and ignores the overlap.
+    C (20,000) is 10 per document, which comes from dividing by 500 + 100 and treating the overlap as adding to the stride instead of subtracting from it.
+    D (15,000) confuses chunks per document with thousands of records.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-002
+  domain: 2
+  objective: "Apply a chunking strategy for a given document structure and model constraints"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer chunked a product manual into 1,200-token sections split on Markdown
+    headings. The embedding model has a 512-token maximum input. Retrieval works for questions
+    answered near the start of a section but consistently misses facts near the end of sections.
+    What is the most likely cause and fix?
+  choices:
+    A: The LLM context window is too small; switch to an LLM with a longer context window.
+    B: The vector index uses the wrong distance metric; recreate it with cosine similarity.
+    C: Text past 512 tokens is truncated before embedding; keep header-based splitting but recursively sub-split sections so each chunk, including overlap, is at most 512 tokens.
+    D: Headings confuse the embedding model; switch to fixed 1,200-character chunks without headings.
+  answer: [C]
+  explanation: |
+    An embedding model silently truncates input beyond its maximum length. Everything after token 512
+    of each 1,200-token chunk never reaches the vector, which matches the "end of section" symptom.
+    Keeping the structure-aware split and sub-splitting to at most 512 tokens fixes it (C).
+    A is wrong because the LLM only sees what retrieval returns; the miss happens before generation.
+    B is wrong because a distance-metric change would not cause a position-dependent failure.
+    D throws away useful structure, and character-based chunks still don't guarantee that the token limit is respected.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-003
+  domain: 2
+  objective: "Filter extraneous content in source documents that degrades quality of a RAG application"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer parses 5,000 contract PDFs with ai_parse_document. Every page carries the
+    same running header, a page number, and a two-line confidentiality footer. During testing, the top
+    retrieved chunks for generic questions often contain mostly this repeated text. What should the
+    engineer do?
+  choices:
+    A: Drop elements typed as page headers, page footers, and page numbers from the parsed output before chunking, then re-chunk and re-index.
+    B: Increase the number of retrieved chunks from 5 to 20 so that real content also makes it into the prompt.
+    C: Add a system-prompt instruction telling the LLM to ignore headers and footers.
+    D: Increase the chunk overlap so that the repeated text is spread across more chunks.
+  answer: [A]
+  explanation: |
+    Repeated boilerplate pulls many chunk embeddings toward each other, and those chunks win generic
+    queries. The fix is to remove the noise after parsing and before chunking. ai_parse_document labels
+    elements with types such as page_header, page_footer and page_number, which makes this a simple
+    filter (A). B spends four times the context tokens and still lets noise take the top slots.
+    C acts after retrieval, so noisy chunks are still selected. D adds more records that contain the same noise and makes the problem worse.
+  refs:
+    - https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_parse_document
+
+- id: D2-004
+  domain: 2
+  objective: "Filter extraneous content in source documents that degrades quality of a RAG application"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is indexing an HTML export of an internal wiki. Each page includes the
+    site's navigation menu and footer links. Many articles also exist in several archived versions
+    with nearly identical text. Users report answers citing outdated procedures and chunks that contain
+    only menu items. Which TWO preprocessing steps best address these issues?
+  choices:
+    A: Convert each HTML page to a PDF before parsing so the layout is preserved.
+    B: Parse the HTML with BeautifulSoup and keep only the main article content, dropping nav, footer, script and style elements.
+    C: Lower the temperature of the generation model to reduce hallucinated procedures.
+    D: Embed each page twice with different embedding models and average the vectors.
+    E: Deduplicate near-identical pages and keep only the latest authoritative version, storing its updated date as metadata.
+  answer: [B, E]
+  explanation: |
+    Menu-only chunks come from navigation markup. Extracting only the main content with an HTML parser
+    removes them (B). Outdated answers come from superseded duplicates competing in retrieval. Keeping
+    the latest version and recording its date fixes both freshness and duplicate hits (E).
+    A adds a lossy conversion step and keeps the menus. C does not change which chunks are retrieved,
+    and the outdated text is real, not hallucinated. D adds cost without removing any noise.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-005
+  domain: 2
+  objective: "Choose the appropriate Python package to extract document content from provided source data and format."
+  difficulty: 1
+  question: |
+    A Generative AI Engineer must extract paragraph text, heading styles, and simple tables from a
+    folder of Microsoft Word .docx files so that chunks can be split by heading. Which Python package
+    is the most direct choice?
+  choices:
+    A: pytesseract
+    B: beautifulsoup4
+    C: scrapy
+    D: python-docx
+  answer: [D]
+  explanation: |
+    A .docx file is zipped XML. python-docx exposes its paragraphs (with style names such as Heading 1)
+    and tables directly, which is exactly what heading-based chunking needs (D).
+    pytesseract is OCR for images, which would be needless and lossy for a file that already has text (A).
+    beautifulsoup4 parses HTML/XML trees and does not understand the .docx package format on its own (B).
+    scrapy is a web-crawling framework, not a document parser (C).
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-006
+  domain: 2
+  objective: "Choose the appropriate Python package to extract document content from provided source data and format."
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is building a RAG application over supplier price sheets delivered as
+    digitally generated PDFs (they have a text layer). Most of the important information is in
+    multi-column tables, and the engineer wants each table's rows and columns preserved so a table can
+    be serialized as one chunk. Which Python package is best suited?
+  choices:
+    A: pytesseract
+    B: python-docx
+    C: pdfplumber
+    D: pyquery
+  answer: [C]
+  explanation: |
+    pdfplumber reads the PDF text layer with character positions and offers table extraction that
+    keeps rows and columns, which suits table-aware chunking (C).
+    pytesseract performs OCR on images. These PDFs already have a text layer, and OCR would add errors
+    and lose table structure (A). python-docx reads Word files, not PDFs (B).
+    pyquery is a jQuery-style HTML query library (D).
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-007
+  domain: 2
+  objective: "Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer has raw PDFs in a Unity Catalog Volume and wants a Delta Sync vector
+    search index with Databricks-computed embeddings that updates incrementally as documents are added.
+    Which sequence of operations is correct?
+  choices:
+    A: Create the Delta Sync index on the Volume path, then parse and chunk the PDFs, then write the chunks into the index.
+    B: Read the files as binary, parse and chunk them, write chunks with a unique chunk id to a Delta table in Unity Catalog, enable Change Data Feed on the table, then create the Delta Sync index using the chunk id as primary key and the text column as the embedding source.
+    C: Parse and chunk the files, compute embeddings in the notebook, write them to a CSV file in the Volume, then create a Delta Sync index on the CSV file.
+    D: Write the chunks to a Delta table, create the index using the document filename as primary key, then enable Change Data Feed after the first sync completes.
+  answer: [B]
+  explanation: |
+    A Delta Sync index reads from a Delta table in Unity Catalog. It needs a primary key that uniquely
+    identifies each row, and on standard endpoints the source table must have Change Data Feed so that
+    only changed rows are re-embedded (B). A is wrong because indexes are not built on Volume paths and
+    you do not write chunks into a Delta Sync index. C is wrong because the source must be a Delta table,
+    not a CSV file. D uses a key that is not unique per chunk (a document has many chunks) and enables CDF too late.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/create-vector-search
+    - https://docs.databricks.com/aws/en/delta/delta-change-data-feed
+
+- id: D2-008
+  domain: 2
+  objective: "Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer writes chunked text to main.kb.chunks with columns doc_id, chunk_text and
+    source_path (the table has neither Change Data Feed nor row tracking enabled), then tries to create
+    a Delta Sync index on a standard endpoint with Databricks-managed embeddings. Index creation and
+    incremental sync do not work as intended. Which TWO changes are required?
+  choices:
+    A: Add a column that uniquely identifies each chunk (for example, doc_id plus chunk sequence) and use it as the primary key.
+    B: Precompute embeddings and store them in an array column, because Delta Sync indexes cannot compute embeddings.
+    C: Convert the table to an external table stored in DBFS root.
+    D: Enable Change Data Feed on the source table, for example with ALTER TABLE ... SET TBLPROPERTIES (delta.enableChangeDataFeed = true).
+    E: Partition the table by source_path so the index can find each document.
+  answer: [A, D]
+  explanation: |
+    A Delta Sync index needs a primary key that identifies each row, and doc_id repeats across a
+    document's chunks, so a unique chunk id is needed (A). On standard endpoints the source table must
+    use Change Data Feed so the index can pick up inserts, updates and deletes incrementally (D).
+    (Tables with row tracking enabled get a change data feed automatically, which is why the question
+    states that neither is enabled.)
+    B is wrong because a Delta Sync index can compute embeddings from a text column through
+    embedding_model_endpoint_name. C is wrong because the source is a Unity Catalog Delta table and DBFS root is not required.
+    E is wrong because partitioning has no bearing on index creation or sync.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/create-vector-search
+    - https://docs.databricks.com/aws/en/delta/delta-change-data-feed
+
+- id: D2-009
+  domain: 2
+  objective: "Identify needed source documents that provide necessary knowledge and quality for a given RAG application"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer built an HR policy assistant from every file in a shared drive. Evaluation
+    shows that roughly a quarter of wrong answers quote a parental-leave policy that was replaced two
+    years ago. Both the old and new policy documents are in the index. What is the best fix?
+  choices:
+    A: Fine-tune the LLM on the current policy so that it prefers the new wording.
+    B: Increase the number of retrieved chunks so that the new policy is also included in the context.
+    C: Curate the corpus to the authoritative current versions, remove superseded documents, and store effective dates as metadata for filtering.
+    D: Switch to a larger embedding model so the current policy gets a higher similarity score.
+  answer: [C]
+  explanation: |
+    The retriever is doing its job: the outdated document is relevant and present. The problem is
+    source selection, so the fix is to keep authoritative, current documents and add date metadata so
+    stale versions cannot be retrieved (C). A is costly, goes stale at the next policy change, and does
+    not stop the old document from being retrieved and cited. B puts conflicting policies in the same
+    prompt and leaves the LLM to guess. D does not help, because old and new policies are semantically
+    almost identical.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-010
+  domain: 2
+  objective: "Identify needed source documents that provide necessary knowledge and quality for a given RAG application"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer evaluates a support assistant for a software company. Questions about
+    features released in the last two quarters almost always fail. Traces show the retriever returns
+    loosely related older chunks, and a RetrievalSufficiency judge marks the context as insufficient
+    for these questions. The engineer confirms the indexed corpus contains only the product manual
+    published 8 months ago. What should the engineer do first?
+  choices:
+    A: Reduce the chunk size so the retriever returns more precise chunks.
+    B: Add a cross-encoder re-ranker to improve the ordering of the retrieved chunks.
+    C: Switch from ANN search to hybrid search to catch exact feature names.
+    D: Add the release notes and updated feature documentation to the source corpus and set up regular ingestion as new releases ship.
+  answer: [D]
+  explanation: |
+    Retrieval cannot return knowledge that is not in the corpus. The evaluation and the corpus check
+    together point to a coverage gap, so the first fix is to add the missing authoritative sources and
+    keep them fresh (D). A, B and C all change how existing chunks are cut, ranked or matched. None of
+    them can create information that was never indexed, so the context would remain insufficient.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/concepts/judges/is_context_sufficient
+
+- id: D2-011
+  domain: 2
+  objective: "Use tools and metrics to evaluate retrieval performance"
+  difficulty: 2
+  question: |
+    For one test question, a labeled evaluation set lists 4 relevant chunks in the corpus. The retriever
+    returns 5 chunks, and the relevance of the returned list in rank order is [relevant, not relevant,
+    relevant, not relevant, not relevant]. What are precision@5 and recall@5?
+  choices:
+    A: precision@5 = 0.40, recall@5 = 0.50
+    B: precision@5 = 0.50, recall@5 = 0.40
+    C: precision@5 = 0.40, recall@5 = 0.40
+    D: precision@5 = 1.00, recall@5 = 0.50
+  answer: [A]
+  explanation: |
+    Precision@k divides the relevant retrieved chunks by k: 2 / 5 = 0.40. Recall@k divides the relevant
+    retrieved chunks by all relevant chunks in the corpus: 2 / 4 = 0.50 (A). B swaps the two
+    denominators. C uses k as the recall denominator too. D reports the reciprocal rank (the first hit is
+    at rank 1, so 1/1 = 1.0) as precision.
+  refs:
+    - https://mlflow.org/docs/latest/api_reference/python_api/mlflow.metrics.html
+
+- id: D2-012
+  domain: 2
+  objective: "Use tools and metrics to evaluate retrieval performance"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer has traced a RAG agent with MLflow 3; each trace contains a RETRIEVER span.
+    The team has no labeled answers or expected facts yet. Using mlflow.genai.evaluate(), the engineer
+    wants to measure whether the retrieved chunks are relevant to each request and whether responses
+    are supported by the retrieved context. Which TWO built-in scorers should they use?
+  choices:
+    A: RetrievalSufficiency
+    B: RetrievalRelevance
+    C: Correctness
+    D: RetrievalGroundedness
+    E: Safety
+  answer: [B, D]
+  explanation: |
+    RetrievalRelevance judges whether each retrieved chunk is relevant to the request (B), and
+    RetrievalGroundedness judges whether the response is supported by the retrieved context (D).
+    Neither needs ground truth. RetrievalSufficiency requires ground truth (expected facts supplied in
+    the expectations), which the team does not have (A). Correctness also needs ground truth and judges the
+    answer, not retrieval (C). Safety checks for harmful content, not retrieval quality (E).
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/predefined-judge-scorers
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/concepts/judges/is_context_sufficient
+
+- id: D2-013
+  domain: 2
+  objective: "Design retrieval systems using advanced chunking strategies"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer runs a troubleshooting assistant for industrial pumps. Users often paste
+    exact error codes such as "E-4012" or part numbers such as "PX-200-B". Pure vector similarity
+    search frequently returns chunks about other error codes with similar wording. Which change
+    most directly improves retrieval for these queries?
+  choices:
+    A: Increase the embedding dimension by switching to a larger embedding model.
+    B: Use hybrid search so that keyword (BM25) matches on exact codes are fused with vector results.
+    C: Increase chunk overlap from 10% to 50%.
+    D: Generate a hypothetical answer with the LLM and embed it instead of the query.
+  answer: [B]
+  explanation: |
+    Dense embeddings capture meaning and blur rare exact tokens such as codes, so "E-4012" and "E-4021"
+    look alike. Hybrid search adds keyword scoring and fuses both result lists (Databricks uses
+    Reciprocal Rank Fusion with query_type set to hybrid), so exact identifiers are matched (B).
+    A is still purely semantic and does not guarantee exact matches. C only adds records.
+    D (HyDE) helps when query and document wording differ, but a generated answer could even invent the wrong code.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/query-vector-search
+    - https://docs.databricks.com/aws/en/vector-search/vector-search
+
+- id: D2-014
+  domain: 2
+  objective: "Design retrieval systems using advanced chunking strategies"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer finds that 150-token chunks give excellent retrieval precision for a
+    regulatory handbook, but generated answers miss conditions and exceptions stated elsewhere in the
+    same section. Switching to 1,500-token chunks hurt retrieval precision, and the embedding model
+    accepts only 512 tokens. Which design addresses both problems?
+  choices:
+    A: Parent-child (small-to-big) retrieval, which embeds the small chunks for matching, stores each chunk's parent section id, and passes the deduplicated parent sections to the LLM.
+    B: Use 1,500-token chunks and rely on the embedding model's truncation to keep the vectors focused.
+    C: Keep 150-token chunks and increase k from 5 to 50 so more of the section is retrieved.
+    D: Replace chunking with one embedding per whole handbook to keep all context together.
+  answer: [A]
+  explanation: |
+    Parent-child retrieval separates the unit you match on from the unit you read. Small child chunks
+    stay within 512 tokens and keep matching precise, and the LLM receives the full parent section with
+    its conditions and exceptions (A). B silently discards everything after token 512, which is often
+    where exceptions appear. C pulls in chunks from unrelated sections and inflates prompt cost.
+    D makes one diluted, truncated vector that cannot be matched precisely.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/tutorials/ai-cookbook/quality-data-pipeline-rag
+
+- id: D2-015
+  domain: 2
+  objective: "Explain the role of re-ranking in the information retrieval process"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is explaining why their RAG pipeline first retrieves 50 candidates with a
+    bi-encoder and then applies a cross-encoder re-ranker to keep the top 5, instead of using the
+    cross-encoder over the whole corpus. Which statement is correct?
+  choices:
+    A: Cross-encoders produce embeddings that are too large to store in a vector index.
+    B: Re-ranking increases recall because the cross-encoder can find documents the retriever missed.
+    C: Bi-encoders are more accurate than cross-encoders, so the re-ranker only breaks ties.
+    D: A cross-encoder scores each query-document pair jointly at query time, which is more accurate but too expensive for millions of documents, so it is applied only to a small candidate set.
+  answer: [D]
+  explanation: |
+    A cross-encoder reads the query and the document together, so it cannot precompute document vectors
+    and needs one model pass per candidate. That makes it accurate but feasible only on a short list
+    from the fast bi-encoder stage (D). A is wrong because a cross-encoder outputs a relevance score,
+    not stored embeddings. B is wrong because re-ranking can only reorder the candidates it receives; it improves
+    precision and ordering, not recall. C reverses the accuracy relationship.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/query-vector-search
+
+- id: D2-016
+  domain: 2
+  objective: "Explain the role of re-ranking in the information retrieval process"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer evaluates a Databricks Vector Search based RAG app. For many failed
+    questions, the correct chunk appears in the first 50 retrieved results but rarely in the top 5 that
+    are sent to the LLM. The latency budget allows about one extra second per request. What is the
+    best next step?
+  choices:
+    A: Enable the built-in reranker on similarity_search (for example, DatabricksReranker with the text column in columns_to_rerank) and keep a small num_results for the prompt.
+    B: Set num_results to 50 and pass all 50 chunks to the LLM.
+    C: Rebuild the index as a Direct Vector Access index so results can be ordered manually.
+    D: Halve the chunk size to double the number of records in the index.
+  answer: [A]
+  explanation: |
+    The relevant chunk is already among the candidates and only ranked too low, which is exactly what
+    re-ranking fixes. The Databricks reranker re-scores retrieved results, typically adds under a second,
+    and lets num_results stay small (A). B multiplies prompt tokens and cost, and pushes the useful chunk
+    into a long, noisy context. C changes how the index is updated, not how results are ranked.
+    D changes chunking without addressing ordering and may hurt it.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/query-vector-search

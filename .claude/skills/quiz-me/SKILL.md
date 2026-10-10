@@ -13,7 +13,11 @@ Request: $ARGUMENTS (default: 5 questions, chosen by the spacing rule below).
 1. **Load the student's history** from `.study/quiz-log.md` if it exists. Each line is
    `YYYY-MM-DD | <module> | <topic> | correct|partial|wrong`.
 2. **Choose topics.**
-   - If a module is given, quiz that module.
+   - If a module is given, quiz that module. For the Databricks GenAI certification track, the
+     argument may be `genai-databricks/0N` or `genai D3`: quiz that exam domain from
+     `genai-databricks/0N-*.md`, in the exam's scenario style ("A Generative AI Engineer…",
+     four options, sometimes "Which TWO"), and do not reuse questions from
+     `genai-databricks/practice/questions-*.yaml`.
    - Otherwise, prioritize: (a) topics answered `wrong`/`partial` most recently, (b) topics last
      seen longest ago, (c) the module matching the current week in `SYLLABUS.md` if unknown.
 3. **Generate questions** grounded in the module text (`modules/` or `system-design/`) and in

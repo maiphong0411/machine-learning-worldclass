@@ -17,13 +17,15 @@ import ast
 import os
 import re
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "website" / "_src"
 REPO_URL = "https://github.com/maiphong0411/machine-learning-worldclass"
 
-SECTIONS = ["modules", "system-design", "case-studies", "assessments", "docs", "labs"]
+SECTIONS = ["modules", "system-design", "case-studies", "assessments", "docs", "labs", "genai-databricks"]
 TOP_LEVEL = ["README.md", "SYLLABUS.md"]
 # Repo-relative markdown files that are part of the site.
 PAGES = TOP_LEVEL + [str(p.relative_to(ROOT)) for s in SECTIONS for p in sorted((ROOT / s).glob("*.md"))]
@@ -109,6 +111,10 @@ def main() -> None:
         (SRC / "labs" / f"{lab.stem}.md").write_text(lab_page(lab))
     shutil.copytree(ROOT / "website" / "assets", SRC / "assets")
     shutil.copy(ROOT / "website" / "progress.md", SRC / "progress.md")
+    # GenAI certification practice exam: the page, plus the question bank as JSON for exam.js.
+    shutil.copy(ROOT / "website" / "genai-practice-exam.md", SRC / "genai-databricks" / "practice-exam.md")
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "render_questions.py"), "--check",
+                    "--json", str(SRC / "assets" / "genai-questions.json")], check=True)
     print(f"Assembled {len(PAGES)} pages and {len(LABS)} lab runners into {SRC.relative_to(ROOT)}")
 
 

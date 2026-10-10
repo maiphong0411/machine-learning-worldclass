@@ -69,6 +69,7 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
   - assets/js/progress.js
   - assets/js/lab-runner.js
+  - assets/js/exam.js
 
 # Short, consistent titles here; each page keeps its full title as its heading.
 nav:
@@ -117,6 +118,17 @@ nav:
       - Mock interview bank: assessments/mock-interview-bank.md
       - System design rubric: assessments/ml-system-design-rubric.md
       - Capstone project: assessments/capstone-project.md
+  - GenAI certification:
+      - genai-databricks/index.md
+      - "D1 Design applications": genai-databricks/01-design-applications.md
+      - "D2 Data preparation": genai-databricks/02-data-preparation.md
+      - "D3 Application development": genai-databricks/03-application-development.md
+      - "D4 Assembling & deploying": genai-databricks/04-assembling-and-deploying.md
+      - "D5 Governance": genai-databricks/05-governance.md
+      - "D6 Evaluation & monitoring": genai-databricks/06-evaluation-and-monitoring.md
+      - Cheat sheet: genai-databricks/cheat-sheet.md
+      - Practice questions: genai-databricks/practice-questions.md
+      - Practice exam: genai-databricks/practice-exam.md
   - Guides:
       - AI study partner: docs/ai-assisted-learning.md
       - Instructor guide: docs/instructor-guide.md

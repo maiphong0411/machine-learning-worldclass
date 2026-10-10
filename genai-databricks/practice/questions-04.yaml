@@ -1,0 +1,661 @@
+# Domain 4 — Assembling and Deploying Applications (22%)
+# Original practice questions aligned to the exam guide live since March 18, 2026.
+# Format: see SCHEMA.md. Rendered by scripts/render_questions.py.
+
+- id: D4-001
+  domain: 4
+  objective: "Code a simple chain according to requirements"
+  difficulty: 1
+  question: |
+    A Generative AI Engineer must build a component that takes a sales-call transcript pasted by a
+    user, writes a three-sentence summary, and returns the action items as a JSON list that a
+    downstream task tracker will parse. The transcript always contains all the information needed.
+    Which design meets the requirement with the fewest moving parts?
+  choices:
+    A: "Retriever over past transcripts, then prompt template, then chat model, then string output"
+    B: "A tool-calling agent that decides whether to summarize or extract on each request"
+    C: "Prompt template with format instructions, then chat model, then a JSON output parser"
+    D: "Fine-tune a model on transcripts so it always emits JSON, then call it without a prompt template"
+  answer: [C]
+  explanation: |
+    All the information is in the input and the steps never change order, so a simple chain of prompt
+    template, chat model, and output parser is sufficient; the parser turns model text into the JSON
+    list the tracker needs. A adds a retriever that brings no new information and adds latency and
+    failure points. B introduces an agent loop for a fixed two-part task, which is more complex and
+    less predictable than necessary. D is the most expensive option and still gives no hard format
+    guarantee without parsing.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/log-agent
+    - https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/
+
+- id: D4-002
+  domain: 4
+  objective: "Code a chain using a pyfunc model with pre- and post-processing"
+  difficulty: 2
+  question: |
+    A custom mlflow.pyfunc.PythonModel served on Model Serving creates an HTTP client for the LLM
+    endpoint and parses a 5 MB JSON config file at the top of predict(). Profiling shows this setup
+    takes about 700 ms of every request. How should the engineer restructure the model?
+  choices:
+    A: "Move the setup into the client application and pass the parsed config in every request"
+    B: "Move the client creation and config loading into load_context(), keep per-request logic in predict()"
+    C: "Increase the endpoint's concurrency so the 700 ms is spread across more requests"
+    D: "Cache the config in a Delta table and query it at the start of each predict() call"
+  answer: [B]
+  explanation: |
+    load_context() runs once when the model is loaded on the serving container, so it is the place for
+    expensive one-time setup such as creating clients and reading config artifacts; predict() then only
+    does per-request pre-processing, the LLM call, and post-processing. A pushes model internals into
+    every caller and inflates request payloads. C adds capacity but each request still pays the 700 ms.
+    D replaces a file read with a remote query on every request, which keeps the per-request overhead.
+  refs:
+    - https://mlflow.org/docs/latest/api_reference/python_api/mlflow.pyfunc.html
+    - https://mlflow.org/docs/latest/ml/model/python_model/
+
+- id: D4-003
+  domain: 4
+  objective: "Code a chain using a pyfunc model with pre- and post-processing"
+  difficulty: 2
+  question: |
+    A pyfunc chain masks product codes before calling an LLM. The pre-processing step reads a lookup
+    file from a path in the engineer's workspace folder. It works in the notebook, but after deployment
+    every request fails with FileNotFoundError. What is the correct fix?
+  choices:
+    A: "Grant the serving endpoint CAN MANAGE permission on the workspace folder"
+    B: "Add the workspace folder path to pip_requirements so it is installed with the model"
+    C: "Hard-code the lookup table contents into the system prompt instead of masking"
+    D: "Pass the file in the artifacts argument of log_model and read it through context.artifacts"
+  answer: [D]
+  explanation: |
+    Files passed through the artifacts argument of mlflow.pyfunc.log_model are copied into the model
+    package, and context.artifacts maps each artifact name to its local path on whatever machine loads
+    the model, including the serving container. A confuses endpoint ACLs (who may query or manage the
+    endpoint) with file access, and the container still would not see a notebook path. B misuses
+    pip_requirements, which lists Python packages, not data files. C abandons the masking requirement
+    and leaks data into the prompt.
+  refs:
+    - https://mlflow.org/docs/latest/api_reference/python_api/mlflow.pyfunc.html
+
+- id: D4-004
+  domain: 4
+  objective: "Choose the basic elements needed to create a RAG application: model flavor, embedding model, retriever, dependencies, input examples, model signature"
+  difficulty: 2
+  question: |
+    A RAG chain logged as a pyfunc model runs correctly in a notebook. After registering and deploying
+    it, the first request fails with "ModuleNotFoundError: No module named 'databricks.vector_search'".
+    What should the engineer change?
+  choices:
+    A: "Declare the retriever's client package in pip_requirements when logging the model, then re-register and redeploy"
+    B: "Add the Vector Search index to the resources list so the endpoint can authenticate"
+    C: "Provide an input_example so MLflow can infer the model signature"
+    D: "Switch the model flavor from pyfunc to langchain so the package is included automatically"
+  answer: [A]
+  explanation: |
+    The serving container installs only the dependencies recorded with the model, so a package that was
+    merely installed in the notebook session is missing at serving time; declaring it in pip_requirements
+    (ideally pinned) fixes the import error. B addresses authentication to the index, which would show up
+    as a permission error, not an import error. C affects signature inference and validation, not package
+    installation. D changes how the model is loaded but does not by itself guarantee an unrelated client
+    package is installed.
+  refs:
+    - https://mlflow.org/docs/latest/api_reference/python_api/mlflow.pyfunc.html
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/log-agent
+
+- id: D4-005
+  domain: 4
+  objective: "Choose the basic elements needed to create a RAG application: model flavor, embedding model, retriever, dependencies, input examples, model signature"
+  difficulty: 2
+  question: |
+    A platform team rejects a RAG model submission for two reasons: the Unity Catalog model registry
+    refuses the new version because it has no input/output schema, and reviewers want a concrete sample
+    request stored with the model so they can see the expected format and confirm the model runs on it
+    before deployment. Which TWO elements should the engineer add when logging the model?
+  choices:
+    A: "A larger embedding model for higher retrieval quality"
+    B: "A model signature describing the request and response schema"
+    C: "A registered model stage of Staging"
+    D: "A reranker on the retriever"
+    E: "An input_example containing a representative request"
+  answer: [B, E]
+  explanation: |
+    Unity Catalog requires new model versions to have a signature, which also lets serving validate
+    request shape. An input_example documents the request format, lets MLflow infer the signature, and
+    is used to check that the model can actually run on it. A and D change retrieval quality, not
+    packaging or registration. C is wrong because Unity Catalog does not support stages at all; it uses
+    aliases.
+  refs:
+    - https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/
+    - https://mlflow.org/docs/latest/api_reference/python_api/mlflow.pyfunc.html
+
+- id: D4-006
+  domain: 4
+  objective: "Register the model to Unity Catalog using MLflow"
+  difficulty: 2
+  question: |
+    A team registers each new version of its support agent in Unity Catalog. They want the serving job
+    and batch pipelines to always use the currently approved version, and to switch to a new version or
+    roll back without changing any code. What should they do?
+  choices:
+    A: "Transition the approved version to the Production stage and load models:/name/Production"
+    B: "Hard-code the approved version number in each consumer and update it at release time"
+    C: "Assign an alias such as champion to the approved version and load models:/catalog.schema.model@champion"
+    D: "Always load the latest version number, since the newest version is the approved one"
+  answer: [C]
+  explanation: |
+    Aliases are mutable named pointers to model versions in Unity Catalog; consumers load by alias, and
+    promotion or rollback is just moving the alias to another version. A uses stages, which are a
+    workspace-registry concept not supported in Unity Catalog. B requires code changes for every
+    promotion. D breaks as soon as an unapproved version is registered, because latest is not the same
+    as approved.
+  refs:
+    - https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/
+
+- id: D4-007
+  domain: 4
+  objective: "Register the model to Unity Catalog using MLflow"
+  difficulty: 1
+  question: |
+    In an older workspace whose default registry is the workspace model registry, an engineer calls
+    mlflow.register_model(model_uri, "rag_bot") and the model does not appear in Unity Catalog. Which
+    change registers it correctly in Unity Catalog?
+  choices:
+    A: "Call mlflow.set_registry_uri(\"databricks-uc\") and register with a name like main.support.rag_bot"
+    B: "Keep the name rag_bot and grant CREATE MODEL on the workspace"
+    C: "Log the model with registered_model_name=\"rag_bot\" instead of calling register_model"
+    D: "Set the experiment to a Unity Catalog volume path before logging"
+  answer: [A]
+  explanation: |
+    Pointing MLflow at Unity Catalog requires the databricks-uc registry URI (the default in MLflow 3, but
+    not in older setups), and Unity Catalog models use a three-level catalog.schema.model name. B keeps a
+    one-level name and grants a privilege that applies to a schema, not a workspace. C is only a
+    shortcut for registration and still targets the default registry with an invalid name. D confuses
+    experiment tracking location with the model registry.
+  refs:
+    - https://docs.databricks.com/aws/en/machine-learning/manage-model-lifecycle/
+
+- id: D4-008
+  domain: 4
+  objective: "Explain the key concepts and components of Mosaic AI Vector Search"
+  difficulty: 1
+  question: |
+    A team created one Vector Search endpoint for each of its 12 small document collections, and the
+    monthly cost is far above the estimate. Each collection has a few hundred thousand chunks and low
+    query volume. Which change best reflects how Vector Search is designed?
+  choices:
+    A: "Merge all collections into one Delta table and one index with no metadata"
+    B: "Switch every endpoint to Direct Vector Access to remove sync cost"
+    C: "Replace the indexes with a SQL warehouse running brute-force similarity queries"
+    D: "Host the 12 indexes on a single endpoint, since an endpoint can serve many indexes"
+  answer: [D]
+  explanation: |
+    The endpoint is the compute that serves queries and a single endpoint can host many indexes (up to
+    a documented per-endpoint limit), so small, low-traffic indexes can share one endpoint. A loses the
+    ability to scope searches per collection unless metadata filters are added, and is unnecessary.
+    B confuses index type with endpoint cost; Direct Vector Access also shifts update work to you.
+    C gives up ANN indexing, so query time grows linearly with corpus size.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/vector-search
+
+- id: D4-009
+  domain: 4
+  objective: "Explain the key concepts and components of Mosaic AI Vector Search"
+  difficulty: 2
+  question: |
+    An engineer tries to create a Delta Sync index on a standard endpoint from a Delta table of document
+    chunks that has a primary key column. Creation fails, reporting that the source table cannot be
+    tracked for incremental changes. What is the most likely fix?
+  choices:
+    A: "Convert the index to Direct Vector Access, which is the only type that supports Delta tables"
+    B: "Enable Change Data Feed on the source Delta table and retry"
+    C: "Switch the sync mode from TRIGGERED to CONTINUOUS"
+    D: "Reduce the embedding dimension to below 1024"
+  answer: [B]
+  explanation: |
+    Delta Sync indexes on standard endpoints read incremental changes from the source table's change data
+    feed, so the table must have Change Data Feed enabled (row tracking enables it automatically). A is
+    backwards: Delta Sync is the type that syncs from Delta tables, and Direct Vector Access is updated
+    through API calls. C changes how often syncs run but both modes still need the change feed. D is
+    unrelated to change tracking.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-search/create-ai-search
+    - https://docs.databricks.com/aws/en/vector-search/vector-search
+
+- id: D4-010
+  domain: 4
+  objective: "Create and query a Vector Search index"
+  difficulty: 2
+  question: |
+    An engineer wants Databricks to compute embeddings for the text column of a chunk table and keep
+    the index in sync with the table. Which TWO pieces of information must be supplied to
+    create_delta_sync_index for this index type, beyond the endpoint, source table, and index names?
+  choices:
+    A: "The name of a primary key column in the source table"
+    B: "The name of a column that already contains embedding vectors, plus the embedding dimension"
+    C: "The text column to embed and the embedding model serving endpoint to use"
+    D: "A schema dictionary listing every column and its type"
+    E: "A query_vector to initialize the index"
+  answer: [A, C]
+  explanation: |
+    Every index needs a primary key, and a managed-embeddings Delta Sync index needs the source text
+    column (embedding_source_column) and the embedding model endpoint (embedding_model_endpoint_name).
+    B describes a self-managed embeddings index, where you supply precomputed vectors instead.
+    D is required for a Direct Vector Access index, which has no source table to infer a schema from.
+    E is a query-time argument for similarity_search, not an index creation parameter.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-search/create-ai-search
+
+- id: D4-011
+  domain: 4
+  objective: "Create and query a Vector Search index"
+  difficulty: 2
+  question: |
+    A hardware retailer's RAG assistant uses vector-only similarity_search. Users who type exact part
+    numbers such as "HX-4471-B" often get conceptually similar but wrong parts. The engineer wants to
+    fix this with the smallest change to the query code. What should they do?
+  choices:
+    A: "Increase num_results from 5 to 50 so the right part is more likely to appear"
+    B: "Rebuild the index with a larger embedding model"
+    C: "Set query_type to hybrid so keyword matching is fused with vector similarity"
+    D: "Switch the index to Direct Vector Access"
+  answer: [C]
+  explanation: |
+    Hybrid search combines vector similarity with BM25 keyword scoring, so exact tokens like part numbers
+    and error codes are matched lexically while semantic matching still works for natural-language
+    queries. A floods the prompt with more irrelevant chunks and does not rank the exact match higher.
+    B is a large change and embeddings still tend to blur exact identifiers. D changes how the index is
+    updated, not how it is searched.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/query-vector-search
+
+- id: D4-012
+  domain: 4
+  objective: "Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements."
+  difficulty: 3
+  question: |
+    A patent-search tool must index about 800 million 768-dimension paragraph embeddings. New patents are loaded once
+    each night. Around 10 analysts use it, and responses within 1 to 2 seconds are acceptable. The top
+    priority is keeping infrastructure cost low. Which configuration fits best?
+  choices:
+    A: "Storage-optimized endpoint with a Delta Sync index in TRIGGERED mode, synced after the nightly load"
+    B: "Standard endpoint with a Delta Sync index in CONTINUOUS mode"
+    C: "Storage-optimized endpoint with a Delta Sync index in CONTINUOUS mode"
+    D: "Standard endpoint with a Direct Vector Access index updated through upserts"
+  answer: [A]
+  explanation: |
+    800 million vectors exceeds standard endpoint capacity (about 320 million at 768 dimensions), while
+    storage-optimized endpoints hold about a billion vectors at 768 dimensions at lower cost; their extra latency and lower QPS ceiling are acceptable for a few
+    analysts with a 1 to 2 second budget. Nightly data means a triggered sync after the load is enough
+    and cheapest. B cannot hold the corpus and continuous sync wastes money on nightly data. C is not
+    possible because storage-optimized endpoints support only triggered sync. D is far beyond Direct
+    Vector Access capacity on standard endpoints and adds manual update work.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/vector-search
+    - https://docs.databricks.com/aws/en/ai-search/create-ai-search
+
+- id: D4-013
+  domain: 4
+  objective: "Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements."
+  difficulty: 3
+  question: |
+    A travel site's semantic search covers 30 million listings, serves about 150 queries per second at
+    peak, and has a strict latency target where every millisecond counts. Listings are refreshed by an
+    hourly ETL job, and results may lag the source by up to an hour. Which setup is most appropriate?
+  choices:
+    A: "Storage-optimized endpoint, hybrid search and reranking enabled on every query"
+    B: "Storage-optimized endpoint with a Delta Sync index in TRIGGERED mode"
+    C: "Standard endpoint with a Delta Sync index in CONTINUOUS mode"
+    D: "Standard endpoint with a Delta Sync index in TRIGGERED mode, synced at the end of the hourly ETL"
+  answer: [D]
+  explanation: |
+    Thirty million vectors fits on a standard endpoint, which has lower query latency and supports high
+    QPS, both of which storage-optimized endpoints trade away. An hourly freshness tolerance means a
+    triggered sync chained to the ETL job meets the requirement at lower cost than a continuous
+    streaming pipeline. A and B add roughly a quarter second of latency and are not designed for high
+    QPS; A also adds reranking latency. C meets latency but pays for continuous sync that the hourly
+    data does not need.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/vector-search
+    - https://docs.databricks.com/aws/en/ai-search/create-ai-search
+
+- id: D4-014
+  domain: 4
+  objective: "Identify how to serve an LLM application that leverages Foundation Model APIs"
+  difficulty: 2
+  question: |
+    A bank fine-tuned an open Llama model for compliance summaries. The production workload is steady
+    at about 30 requests per second and needs predictable performance. How should the model be served?
+  choices:
+    A: "Call the base model on a pay-per-token Foundation Model API endpoint with the fine-tuning examples in the prompt"
+    B: "Serve it on a Foundation Model APIs provisioned throughput endpoint"
+    C: "Create an external model endpoint pointing at the bank's Delta table of weights"
+    D: "Run it with ai_query in a nightly SQL job and cache the answers"
+  answer: [B]
+  explanation: |
+    Provisioned throughput gives dedicated capacity with performance guarantees and supports fine-tuned
+    and custom weights, which is exactly a steady, high-throughput production workload on a fine-tuned
+    model. A discards the fine-tuning and pay-per-token endpoints serve Databricks-hosted base models.
+    C misunderstands external models, which proxy third-party providers, not weight files. D is a batch
+    pattern and cannot serve on-demand summaries.
+  refs:
+    - https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/
+
+- id: D4-015
+  domain: 4
+  objective: "Identify how to serve an LLM application that leverages Foundation Model APIs"
+  difficulty: 2
+  question: |
+    A company has an enterprise contract with a third-party LLM provider and must route usage through that
+    contract. Several Databricks applications will call the model, and security requires one governed
+    place for access control, rate limits, and logging, with no provider key in application code.
+    Which TWO actions meet these requirements?
+  choices:
+    A: "Create a Model Serving external model endpoint configured for that provider"
+    B: "Deploy the provider's model on a provisioned throughput endpoint"
+    C: "Save the API key in a model artifact so every chain can read it"
+    D: "Store the provider API key in Databricks secrets and reference it in the endpoint configuration"
+    E: "Give each application team the API key so they can call the provider directly"
+  answer: [A, D]
+  explanation: |
+    External model endpoints proxy third-party providers behind a single Databricks endpoint, where
+    permissions, rate limits, and logging can be centrally applied, and the provider credential is
+    referenced from Databricks secrets using the secrets reference syntax. B is wrong because provisioned
+    throughput serves models hosted on Databricks, not a provider's proprietary API under your contract.
+    C and E spread the key into artifacts and application code, the opposite of central governance.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/external-models/
+
+- id: D4-016
+  domain: 4
+  objective: "Control access to resources from model serving endpoints"
+  difficulty: 2
+  question: |
+    A RAG agent deployed with agents.deploy() returns permission errors whenever it queries its Vector
+    Search index, even though the engineer who deployed it can query the index from a notebook. The
+    agent was logged without any extra arguments. What is the recommended fix?
+  choices:
+    A: "Put the engineer's personal access token in the agent code"
+    B: "Grant all users CAN MANAGE on the serving endpoint"
+    C: "Re-log the agent declaring the index and its embedding endpoint in resources, then redeploy"
+    D: "Copy the index into a public Delta table that needs no permissions"
+  answer: [C]
+  explanation: |
+    Automatic authentication passthrough works only for resources declared with the resources parameter
+    at logging time; Databricks then verifies the deployer's access and issues short-lived credentials
+    to a least-privilege service principal for the agent. The embedding endpoint must be declared too,
+    because the retriever depends on it. A ties production to a personal credential that leaks and
+    expires. B controls who can manage the endpoint, not what the endpoint can read. D removes
+    governance instead of granting the agent correct access.
+  refs:
+    - https://docs.databricks.com/aws/en/agents/custom-agents/model-serving/agent-authentication-model-serving
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/deploy-agent
+
+- id: D4-017
+  domain: 4
+  objective: "Control access to resources from model serving endpoints"
+  difficulty: 3
+  question: |
+    An HR agent served on Model Serving queries a Unity Catalog table protected by row filters so that
+    each manager sees only their own reports. Security requires that answers reflect the permissions of
+    whoever is asking and that access is auditable per user. Which authentication approach should the
+    agent use for that table?
+  choices:
+    A: "On-behalf-of-user authentication, creating the user-scoped client inside predict"
+    B: "Automatic authentication passthrough using the agent's service principal"
+    C: "Manual authentication with one shared service principal stored in secrets"
+    D: "Grant every manager CAN QUERY on the endpoint and rely on that for row-level access"
+  answer: [A]
+  explanation: |
+    On-behalf-of-user authentication makes the agent act as the querying user, so Unity Catalog row filters
+    and audit logs apply per user; the user identity is known only at request time, so the client is created
+    inside predict rather than at initialization. B and C both use one service principal, so every
+    manager would see what that principal can see. D controls who can call the endpoint, not which rows
+    the agent can read on their behalf.
+  refs:
+    - https://docs.databricks.com/aws/en/agents/custom-agents/model-serving/agent-authentication-model-serving
+    - https://docs.databricks.com/aws/en/security/auth/access-control/
+
+- id: D4-018
+  domain: 4
+  objective: "Identify batch inference workloads and apply ai_query() appropriately"
+  difficulty: 1
+  question: |
+    Each night about 5 million new product reviews land in a Delta table. Analysts want every review
+    tagged with a short issue category stored in another table, and they work mostly in SQL. Nobody
+    waits on an individual result. What is the most appropriate approach?
+  choices:
+    A: "Deploy a chat agent and have analysts paste reviews into it"
+    B: "Write a notebook loop that sends each review to the REST endpoint one at a time"
+    C: "Create a Vector Search index over the reviews and query it for each category"
+    D: "Run a scheduled SQL job that applies ai_query() to the new rows and writes results to a Delta table"
+  answer: [D]
+  explanation: |
+    This is a batch workload: the inputs are known in advance, results go to a table, and no user waits.
+    ai_query() runs model inference over table rows with Databricks handling parallelism and retries, and
+    it fits SQL-centric users and scheduled jobs. A is a manual interactive tool for a millions-row job.
+    B reimplements batching, retries, and scaling by hand and is slow and fragile. C retrieves similar
+    documents but does not produce a category per review.
+  refs:
+    - https://docs.databricks.com/aws/en/large-language-models/ai-functions
+    - https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_query
+
+- id: D4-019
+  domain: 4
+  objective: "Identify batch inference workloads and apply ai_query() appropriately"
+  difficulty: 2
+  question: |
+    A nightly ai_query() job over 2 million insurance notes keeps failing near the end because a handful
+    of rows produce model errors, and the whole query is lost each time. What change follows the
+    documented best practice?
+  choices:
+    A: "Split the table into 2,000 small batches and run a separate query for each"
+    B: "Pass failOnError => false, then inspect the error field of the result to handle failed rows"
+    C: "Move the job to a real-time endpoint called from the application"
+    D: "Remove the returnType argument so errors are converted to empty strings"
+  answer: [B]
+  explanation: |
+    With failOnError set to false, ai_query() returns a struct containing the response and an error
+    message for each row, so a few bad rows no longer abort the whole query and can be retried or reviewed.
+    A contradicts the guidance to submit the full dataset in one query and let Databricks manage
+    parallelism. C turns a batch workload into a real-time one for no benefit. D does not change error
+    behavior.
+  refs:
+    - https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_query
+    - https://docs.databricks.com/aws/en/large-language-models/ai-functions
+
+- id: D4-020
+  domain: 4
+  objective: "Configure a persistent datastore to store and retrieve intermediate memory or structured information."
+  difficulty: 3
+  question: |
+    A multi-turn claims agent on an autoscaling serving endpoint sometimes forgets details the user gave
+    two turns earlier. The agent keeps conversation history in a Python list on the agent object.
+    Which TWO changes make the conversation state reliable?
+  choices:
+    A: "Increase the LLM's context window so more history fits"
+    B: "Store each turn as a document in the Vector Search index"
+    C: "Persist conversation checkpoints in a Lakebase (Postgres) database keyed by a thread ID"
+    D: "Disable autoscaling and keep scale-to-zero enabled to stay on one replica"
+    E: "Have the client send the same thread ID with every turn of a conversation"
+  answer: [C, E]
+  explanation: |
+    Serving replicas are stateless and requests can land on any replica, so in-process history is lost or
+    inconsistent; Databricks documents short-term memory as checkpointing to a Lakebase instance keyed by
+    a thread ID, with the client passing that thread ID on every turn. A does not help because the history
+    never reaches the model on the wrong replica. B misuses a similarity index as a transactional state
+    store. D still loses memory on restarts and every scale-to-zero, and caps throughput.
+  refs:
+    - https://docs.databricks.com/aws/en/agents/custom-agents/model-serving/stateful-agents-model-serving
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/stateful-agents
+
+- id: D4-021
+  domain: 4
+  objective: "Apply prompt version control and manage prompt lifecycle"
+  difficulty: 2
+  question: |
+    A production agent loads its system prompt from the MLflow Prompt Registry using the production
+    alias. After the alias was moved from version 7 to version 8, complaint rates rose. What is the
+    fastest safe rollback?
+  choices:
+    A: "Call mlflow.genai.set_prompt_alias to point production back at version 7"
+    B: "Edit version 8 in place to restore the previous wording"
+    C: "Change the agent code to load prompts:/name/7 and redeploy the endpoint"
+    D: "Delete version 8 so the registry falls back to an earlier version"
+  answer: [A]
+  explanation: |
+    Because the application loads the prompt by alias, moving the alias back to version 7 restores the old
+    behavior with no code change or redeploy, and version history keeps the audit trail. B is impossible:
+    prompt versions are immutable. C works but is slower and hard-codes a version, breaking future
+    alias-based promotion. D destroys version history and is not a controlled, auditable rollback.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/prompt-version-mgmt/prompt-registry/
+    - https://mlflow.org/docs/latest/genai/prompt-registry/
+
+- id: D4-022
+  domain: 4
+  objective: "Apply prompt version control and manage prompt lifecycle"
+  difficulty: 3
+  question: |
+    A custom agent on Model Serving was logged with its Vector Search index and LLM endpoint declared as
+    resources. Retrieval works, but loading the system prompt with
+    mlflow.genai.load_prompt("prompts:/prod.support.answer_prompt@production") fails with a permission
+    error. What is the documented way to give the served agent access to the prompt?
+  choices:
+    A: "Declare the prompt as a DatabricksVectorSearchIndex resource"
+    B: "Copy the prompt text into the agent code so the registry is not needed"
+    C: "Grant CAN QUERY on the endpoint to the prompt's owner"
+    D: "Use manual authentication by passing service principal credentials as secret-backed environment variables"
+  answer: [D]
+  explanation: |
+    The Databricks guidance for deployed custom agents is that reading the Prompt Registry requires
+    manual authentication, configured by overriding the security environment variables with a service
+    principal's OAuth credentials referenced from Databricks secrets. Overriding those variables disables
+    passthrough for other resources, so the principal must also have access to them. A uses a resource
+    class for a different object type. B abandons version control and alias-based promotion. C controls
+    who can call the endpoint, not what the endpoint can read.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/prompt-version-mgmt/prompt-registry/use-prompts-in-deployed-apps
+    - https://docs.databricks.com/aws/en/agents/custom-agents/model-serving/agent-authentication-model-serving
+
+- id: D4-023
+  domain: 4
+  objective: "Apply CI/CD best practices such as updating a Vector Search index, promoting prompts across environments, and testing individual components of an agent."
+  difficulty: 3
+  question: |
+    A team will switch its RAG application from a 768-dimension embedding model to a 1024-dimension one.
+    The current production index is a Delta Sync index with self-managed embeddings. Following CI/CD
+    best practice, how should the change be rolled out?
+  choices:
+    A: "Overwrite the vector column with new embeddings and call sync() on the production index"
+    B: "Keep the existing index and change only the query-time embedding model"
+    C: "Build a new index with re-computed embeddings, evaluate retrieval in staging, then switch the retriever configuration"
+    D: "Convert the existing index to managed embeddings with the new model"
+  answer: [C]
+  explanation: |
+    Vectors from different embedding models live in different spaces and here even differ in dimension,
+    so the corpus must be fully re-embedded into a new index, validated with retrieval and end-to-end
+    evaluation, and then swapped in through configuration so rollback is possible. A mutates the live
+    index in place with no gate and a dimension change the index was not created for. B mixes
+    incompatible query and document vectors. D is not possible: a self-managed index cannot be converted
+    to managed embeddings.
+  refs:
+    - https://docs.databricks.com/aws/en/vector-search/vector-search
+    - https://docs.databricks.com/aws/en/dev-tools/bundles/resources
+
+- id: D4-024
+  domain: 4
+  objective: "Apply CI/CD best practices such as updating a Vector Search index, promoting prompts across environments, and testing individual components of an agent."
+  difficulty: 2
+  question: |
+    An agent uses a retriever, a currency-conversion tool, and an LLM. After a release, the end-to-end
+    evaluation score dropped, and the team could not tell which part caused it. What should they add to
+    the CI pipeline to prevent this in future?
+  choices:
+    A: "A larger end-to-end evaluation set, run only after production deployment"
+    B: "Separate tests for each component, such as unit tests for the tool and a top-k recall check for the retriever, before the end-to-end evaluation gate"
+    C: "Manual review of a few answers by the developer before merging"
+    D: "A rule to always pin the newest LLM version so behavior stays current"
+  answer: [B]
+  explanation: |
+    Testing components separately localizes faults: a deterministic unit test with fixed inputs catches a
+    broken tool, and a retrieval check with known relevant chunks catches a retriever regression, while
+    the end-to-end evaluation remains the final gate. A still cannot attribute the failure and runs too
+    late. C is not automated or repeatable. D adds uncontrolled change rather than testing anything.
+  refs:
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/log-agent
+    - https://docs.databricks.com/aws/en/dev-tools/bundles/resources
+
+- id: D4-025
+  domain: 4
+  objective: "Integrate managed, external, and custom MCP servers based on a given application requirements"
+  difficulty: 3
+  question: |
+    A finance assistant must call existing Unity Catalog functions that compute account balances, and
+    must also look up vendor risk ratings from a SaaS provider that publishes its own MCP server
+    requiring an API key. The team wants the least code to maintain and no credentials in agent code.
+    Which TWO actions should the engineer take?
+  choices:
+    A: "Write a custom MCP server on Databricks Apps that wraps both the UC functions and the vendor API"
+    B: "Connect the agent to the Databricks managed MCP server for Unity Catalog functions"
+    C: "Put the vendor API key in the agent's system prompt so the model can pass it to the server"
+    D: "Register the vendor's MCP server through a Unity Catalog HTTP connection that holds its credentials"
+    E: "Export the vendor's risk ratings to a Delta table once a year and drop the MCP integration"
+  answer: [B, D]
+  explanation: |
+    Databricks hosts managed MCP servers for Unity Catalog functions, so no server code is needed and UC
+    permissions still apply. A third-party MCP server is integrated as an external server through a Unity
+    Catalog connection that stores its credentials, with Databricks proxying the calls. A adds code you
+    must host and secure for capabilities that already exist. C exposes a secret to the model and logs.
+    E makes risk ratings up to a year stale, which breaks the lookup requirement.
+  refs:
+    - https://docs.databricks.com/aws/en/agents/mcp-tools/built-in-mcp-services
+    - https://docs.databricks.com/aws/en/ai-gateway/register-mcp-service
+    - https://docs.databricks.com/aws/en/generative-ai/mcp/
+
+- id: D4-026
+  domain: 4
+  objective: "Integrate managed, external, and custom MCP servers based on a given application requirements"
+  difficulty: 2
+  question: |
+    An agent must create maintenance tickets in an in-house work-order system that exposes only a private
+    REST API. No MCP server exists for it, and Databricks provides no managed server for it. How should
+    the engineer expose this capability to the agent as an MCP tool?
+  choices:
+    A: "Build a custom MCP server that wraps the REST API and host it on Databricks Apps"
+    B: "Use the managed MCP server for Databricks SQL to call the REST API"
+    C: "Register the work-order system's database as a Vector Search index"
+    D: "Ask the LLM to generate HTTP requests in its answer for the user to run"
+  answer: [A]
+  explanation: |
+    When neither a managed nor a third-party server exists, a custom MCP server is the right choice;
+    Databricks documents hosting custom servers on Databricks Apps, and agents connect to the app URL
+    with access governed by app permissions. B is for running SQL against warehouses, not calling
+    arbitrary REST APIs. C supports similarity search, not creating records. D leaves the action to the
+    user and gives up the agent's tool-calling ability.
+  refs:
+    - https://docs.databricks.com/aws/en/agents/custom-agents/use-mcp-tools
+    - https://docs.databricks.com/aws/en/generative-ai/mcp/
+
+- id: D4-027
+  domain: 4
+  objective: "Develop an appropriate interactive user facing interface for an agent usage scenario (Apps, Slack, Teams, etc.)"
+  difficulty: 3
+  question: |
+    A Databricks App built with Streamlit lets regional sales managers chat with an agent about pipeline
+    data. The underlying Unity Catalog tables use row filters so each manager sees only their region. In
+    testing, every manager sees every region. The app currently uses only its default identity. What
+    should the engineer change?
+  choices:
+    A: "Grant the app's service principal access to all regions so results are complete"
+    B: "Store each manager's personal access token in the app configuration"
+    C: "Enable user authorization so queries run with the user's token from the x-forwarded-access-token header"
+    D: "Move the agent call into browser JavaScript so it uses the user's session"
+  answer: [C]
+  explanation: |
+    By default an app acts as its own service principal, so every user gets the same access; user
+    authorization forwards the signed-in user's downscoped token so Unity Catalog row filters are
+    evaluated for that user. A makes the leak permanent. B creates long-lived secrets the app should
+    never hold. D exposes the backend call and credentials to the browser instead of keeping them on the
+    server side.
+  refs:
+    - https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth
+    - https://docs.databricks.com/aws/en/generative-ai/agent-framework/agent-authentication

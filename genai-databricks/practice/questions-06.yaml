@@ -1,0 +1,373 @@
+- id: D6-001
+  domain: 6
+  objective: "Select an LLM choice (size and architecture) based on a set of quantitative evaluation metrics"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer compares four models on the same 400-question evaluation set for a
+    RAG assistant. Requirements: p95 latency at most 1.5 s, and the highest possible correctness
+    within that limit.
+    Model W: correctness 91%, p95 2.8 s.
+    Model X: correctness 76%, p95 0.7 s.
+    Model Y: correctness 87%, p95 1.3 s.
+    Model Z: correctness 84%, p95 1.1 s.
+    Which model should the engineer choose?
+  choices:
+    A: Model W
+    B: Model X
+    C: Model Y
+    D: Model Z
+  answer: [C]
+  explanation: |
+    Apply the hard constraint first: W fails the 1.5 s latency limit, so it is out despite the
+    best correctness. Among X, Y and Z, Y has the highest correctness (87%) within the limit. X is
+    fastest but its quality is far lower, and the requirement asks for the best quality inside the
+    limit, not the lowest latency. Z also meets latency but scores below Y.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/evaluate-app
+
+- id: D6-002
+  domain: 6
+  objective: "Select an LLM choice (size and architecture) based on a set of quantitative evaluation metrics"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer must choose a model for a high-volume classification-and-explanation
+    task. Cost per 1,000 requests is the main constraint, and quality must be at least 85% on the
+    team's evaluation set.
+    Dense 70B: quality 90%, $4.10 per 1,000 requests.
+    Mixture-of-experts with a small active parameter count: quality 88%, $1.70.
+    Dense 8B: quality 79%, $0.35.
+    Dense 8B fine-tuned on the task: quality 86%, $0.55.
+    Which model should the engineer pick?
+  choices:
+    A: Dense 8B fine-tuned on the task
+    B: Mixture-of-experts model
+    C: Dense 70B
+    D: Dense 8B
+  answer: [A]
+  explanation: |
+    With cost as the main constraint and an 85% quality floor, choose the cheapest model that
+    clears the floor: the fine-tuned 8B at 86% and $0.55. D is cheaper but fails the 85% floor.
+    B and C pass the floor but cost about 3x and 7x more; their extra quality is not what the
+    requirement prioritises. This shows how a small task-specific model can beat larger
+    architectures on the cost-quality frontier.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/evaluate-app
+
+- id: D6-003
+  domain: 6
+  objective: "Select key metrics to monitor for a specific LLM deployment scenario"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is launching a customer-facing streaming chat assistant that answers
+    product questions from retrieved documentation. Product managers worry about slow responses
+    and hallucinated answers.
+    Which TWO metrics are most important to monitor?
+  choices:
+    A: p95 time to first token
+    B: BLEU score against reference answers for each live request
+    C: Groundedness of responses in the retrieved context, measured on sampled traces
+    D: Average GPU temperature of the serving cluster
+    E: Total number of documents in the source volume
+  answer: [A, C]
+  explanation: |
+    In streaming chat, users perceive the time until the first token, and the tail (p95) captures
+    the slow experiences that the mean hides (A). Groundedness on sampled traces measures
+    hallucination without needing reference answers (C). B needs a reference answer for every live
+    request, which production traffic does not have. D is an infrastructure detail that does not
+    track either concern. E describes the corpus size, not answer speed or quality.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/production-monitoring
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/concepts/judges/
+
+- id: D6-004
+  domain: 6
+  objective: "Select key metrics to monitor for a specific LLM deployment scenario"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer runs a nightly job that uses ai_query() to summarise 4 million
+    support transcripts into a Delta table read by analysts the next morning.
+    Which metrics should the engineer prioritise for monitoring this deployment?
+  choices:
+    A: p99 per-request latency and time to first token
+    B: Job completion time, failed rows, total tokens processed, and cost per run
+    C: Thumbs-up rate from end users
+    D: Number of concurrent chat sessions
+  answer: [B]
+  explanation: |
+    For a batch workload, no user waits on any single request; what matters is finishing before
+    the morning, how many rows failed, and how many tokens (and dollars) each run consumes. A
+    applies to interactive serving. C does not exist for a batch job with no chat interface. D is a
+    real-time chat metric unrelated to a nightly batch.
+  refs:
+    - https://docs.databricks.com/aws/en/admin/system-tables/model-serving-cost
+
+- id: D6-005
+  domain: 6
+  objective: "Evaluate agent performance using MLflow scoring and tracing"
+  difficulty: 1
+  question: |
+    A Generative AI Engineer wants to evaluate a new version of a tool-calling agent on an
+    evaluation dataset using MLflow 3, with built-in LLM judges and one custom scorer, and keep a
+    trace for every evaluated row.
+    Which call should the engineer use?
+  choices:
+    A: mlflow.evaluate(model=agent_uri, model_type="databricks-agent")
+    B: mlflow.log_metric("quality", score)
+    C: mlflow.pyfunc.load_model(agent_uri).predict(eval_df)
+    D: mlflow.genai.evaluate(data=eval_dataset, predict_fn=agent_fn, scorers=[...])
+  answer: [D]
+  explanation: |
+    In MLflow 3, mlflow.genai.evaluate() calls predict_fn for each row (producing a trace), runs the
+    listed scorers (built-in judges and custom scorers), and logs per-row assessments to an MLflow
+    run. A is the legacy Agent Evaluation API used by older material. B only logs a number you
+    already computed. C produces predictions but no scorers or evaluation results.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/evaluate-app
+
+- id: D6-006
+  domain: 6
+  objective: "Evaluate agent performance using MLflow scoring and tracing"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer's RAG agent scores poorly on the Correctness judge, but
+    RetrievalGroundedness is high on the same rows. The engineer opens the MLflow traces of failing
+    rows.
+    What is the most likely diagnosis to confirm in the traces?
+  choices:
+    A: The LLM is inventing facts not present in the retrieved context
+    B: The retriever span is returning documents that are irrelevant or outdated, and the LLM faithfully summarises them
+    C: The evaluation dataset is missing the inputs field
+    D: The Safety judge is overriding the Correctness judge
+  answer: [B]
+  explanation: |
+    High groundedness means the answer is supported by the retrieved context; low correctness
+    means the answer disagrees with the expected facts. Together they point to retrieval: the
+    context itself is wrong, which the retriever span in the trace will show (low
+    RetrievalRelevance would confirm it). A would lower groundedness, not keep it high. C would
+    prevent evaluation from running at all. D is wrong because judges are independent and do not
+    override each other.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/concepts/judges/
+    - https://docs.databricks.com/aws/en/mlflow3/genai/tracing/
+
+- id: D6-007
+  domain: 6
+  objective: "Identify evaluation judges that require ground truth"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer is building an evaluation dataset for a RAG application and wants to
+    know which built-in MLflow judges will need SMEs to supply expected facts for each row.
+    Which TWO judges require ground truth?
+  choices:
+    A: RetrievalGroundedness
+    B: Correctness
+    C: RelevanceToQuery
+    D: RetrievalSufficiency
+    E: Safety
+  answer: [B, D]
+  explanation: |
+    Correctness compares the response to expected facts or an expected response, and
+    RetrievalSufficiency checks whether the retrieved context contains what is needed to produce
+    the expected facts; both need expectations (B, D). RetrievalGroundedness compares the response
+    with the retrieved context, not a reference answer (A). RelevanceToQuery compares the response
+    with the request (C). Safety judges the response content on its own (E).
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/concepts/judges/
+    - https://mlflow.org/docs/latest/genai/eval-monitor/scorers/llm-judge/predefined/
+
+- id: D6-008
+  domain: 6
+  objective: "Identify evaluation judges that require ground truth"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer wants to score live production traces of a deployed agent. No one
+    has written expected answers for these requests.
+    Which built-in judge is NOT suitable for this traffic without additional labeling?
+  choices:
+    A: Correctness
+    B: Guidelines
+    C: RelevanceToQuery
+    D: Safety
+  answer: [A]
+  explanation: |
+    Correctness needs ground truth in the expectations field, which unlabeled production traffic
+    does not have; it becomes usable only after SMEs add expectations. Guidelines checks the
+    response against natural-language rules you define once, RelevanceToQuery compares the
+    response with the request, and Safety checks for harmful content; none of them needs an answer
+    key, so all three can run on live traces.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/concepts/judges/
+
+- id: D6-009
+  domain: 6
+  objective: "Use Databricks custom Scorers for evaluating agents and LLMs"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer's agent must return JSON containing the keys "category" and
+    "priority". The engineer wants every evaluation run to report the share of responses that meet
+    this rule, cheaply and deterministically.
+    What should the engineer do?
+  choices:
+    A: Use the built-in Correctness judge with the schema in expected_facts
+    B: Ask SMEs to check the format of each response in the Review App
+    C: Write a Python function decorated with @scorer that parses outputs and returns True or False, and pass it in scorers to mlflow.genai.evaluate()
+    D: Create an LLM judge that asks a model whether the output looks like JSON
+  answer: [C]
+  explanation: |
+    A format rule is deterministic, so a code-based scorer is free, fast and exact: the @scorer
+    function receives outputs and can return a boolean or a Feedback, and it runs inside
+    mlflow.genai.evaluate(). A uses an LLM to judge factual correctness, which is the wrong tool for
+    a schema check. B spends scarce expert time on something code can verify. D is slower, costs
+    tokens and can be wrong on a question a JSON parser answers exactly.
+  refs:
+    - https://mlflow.org/docs/latest/genai/eval-monitor/scorers/custom/
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/custom-scorers
+
+- id: D6-010
+  domain: 6
+  objective: "Use Databricks custom Scorers for evaluating agents and LLMs"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer needs to grade an insurance agent's replies against a company rubric
+    with three outcomes: "compliant", "partially_compliant" and "non_compliant". The judgement
+    requires reading the request and the reply, and no built-in judge expresses this rubric.
+    Which approach fits best?
+  choices:
+    A: A regular-expression scorer that searches for the word "compliant"
+    B: The built-in RetrievalSufficiency judge
+    C: Averaging the Safety and RelevanceToQuery scores
+    D: A custom LLM judge created with make_judge(), with instructions that reference the inputs and outputs and a feedback value type limited to the three outcomes
+  answer: [D]
+  explanation: |
+    make_judge() creates a custom LLM judge from natural-language instructions that use template
+    variables such as inputs and outputs, and feedback_value_type can restrict results to the
+    three categories. A cannot capture a judgement about meaning. B checks whether retrieved
+    context covers expected facts, which is not this rubric. C combines unrelated metrics and
+    cannot produce the three rubric outcomes.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/custom-judge/
+
+- id: D6-011
+  domain: 6
+  objective: "Use inference logging to assess deployed RAG application performance"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer routes 20% of a RAG endpoint's traffic to a new model version. A week
+    later, user complaints rise. Inference tables are enabled on the endpoint.
+    What is the best first analysis?
+  choices:
+    A: Query the inference table grouped by the served entity to compare error rate and latency per version, then score sampled requests from each version for groundedness
+    B: Delete the inference table and re-enable it to collect fresh data
+    C: Re-run the offline evaluation dataset only on the old version
+    D: Increase the endpoint's provisioned concurrency
+  answer: [A]
+  explanation: |
+    The inference table records each request and response with the served entity, status and
+    timing, so grouping by version isolates whether the new version causes the regression; scoring
+    sampled requests per version adds the quality dimension. B throws away the evidence. C ignores
+    the new version and real traffic. D assumes a capacity problem without any data.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-gateway/inference-tables-serving-endpoints
+
+- id: D6-012
+  domain: 6
+  objective: "Use inference tables and Agent Monitoring to track a live LLM endpoint"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer wants continuous quality tracking of a deployed agent that handles
+    100,000 requests per day, using the same Safety judge already used in offline evaluation,
+    while keeping judge costs low.
+    What should the engineer do?
+  choices:
+    A: Run mlflow.genai.evaluate() manually every morning on all of yesterday's requests with Correctness and Safety
+    B: Register the Safety scorer to the agent's MLflow experiment and start it with a sampling configuration that evaluates a fraction of traces
+    C: Read the inference table weekly and grep responses for unsafe words
+    D: Ask users to report unsafe answers by email
+  answer: [B]
+  explanation: |
+    Production monitoring runs registered scorers on traces automatically; calling start() with a
+    sampling rate judges a fraction of traffic, reusing the offline scorer and controlling LLM-judge
+    cost. A is manual, judges every request (expensive), and Correctness cannot run without ground
+    truth. C is slow and keyword matching misses most unsafe content. D is not monitoring and
+    captures only a small, biased share of problems.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/production-monitoring
+
+- id: D6-013
+  domain: 6
+  objective: "Use AI Gateway (Inference Tables, Usage Tables, and rate limiting) to track an LLM or agent deployed via Agent Framework."
+  difficulty: 3
+  question: |
+    A Generative AI Engineer deployed an agent with Agent Framework that calls a pay-per-token
+    Foundation Model API endpoint. Finance wants to know how many tokens each team's service
+    principal consumes, and wants to stop one team from consuming more than its share.
+    Which TWO actions should the engineer take?
+  choices:
+    A: Read token counts from the agent endpoint's inference table request column
+    B: Enable scale to zero on the Foundation Model API endpoint
+    C: Enable usage tracking on the Foundation Model API endpoint and query the usage system table grouped by requester
+    D: Add a Guidelines judge that tells the agent to use fewer tokens
+    E: Configure a token-per-minute rate limit for that team's service principal on the Foundation Model API endpoint
+  answer: [C, E]
+  explanation: |
+    Usage tracking writes per-request token counts and the requester to system tables, which is
+    the right source for consumption by principal (C). A rate limit for a specific service
+    principal caps that team's usage, and TPM limits belong on the LLM endpoint because TPM
+    rate limits cannot be applied to endpoints that serve agents or custom models (E). A is wrong because inference tables record payloads,
+    and token accounting by requester is the purpose of usage tables. B affects idle capacity, not
+    one team's consumption. D is an evaluation tool, not an enforcement mechanism.
+  refs:
+    - https://docs.databricks.com/aws/en/ai-gateway/configure-ai-gateway-endpoints
+    - https://docs.databricks.com/aws/en/ai-gateway/overview-serving-endpoints
+    - https://docs.databricks.com/aws/en/ai-gateway/usage-tracking
+
+- id: D6-014
+  domain: 6
+  objective: "Use Databricks features to control LLM costs"
+  difficulty: 2
+  question: |
+    A Generative AI Engineer's development team has an LLM endpoint on provisioned throughput that
+    is used for about one hour a day for testing. The monthly bill is high, and the team accepts
+    slower first responses.
+    Which change most reduces cost?
+  choices:
+    A: Add more provisioned throughput units to finish tests faster
+    B: Enable inference tables on the endpoint
+    C: Use pay-per-token Foundation Model APIs or enable scale to zero for the endpoint
+    D: Switch to a larger model so fewer tests are needed
+  answer: [C]
+  explanation: |
+    Provisioned throughput charges for reserved capacity whether or not it is used, so an endpoint
+    idle 23 hours a day wastes most of its cost; pay-per-token charges only for tokens, and scale
+    to zero removes idle capacity at the price of a cold start, which the team accepts. A adds more
+    reserved capacity and raises cost. B adds logging, which costs more, not less. D raises
+    per-token cost.
+  refs:
+    - https://docs.databricks.com/aws/en/admin/system-tables/model-serving-cost
+    - https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/supported-models
+
+- id: D6-015
+  domain: 6
+  objective: "Incorporate SME feedback to improve agent performance"
+  difficulty: 3
+  question: |
+    A Generative AI Engineer uses a custom LLM judge to score a claims-processing agent. SMEs have
+    labeled 120 traces in a labeling session using a calibrated rubric, and the judge agrees with
+    them on only 64% of traces. The engineer wants automated evaluation that reflects the SMEs'
+    standard.
+    What should the engineer do?
+  choices:
+    A: Stop using SME labels and trust the judge, since it is more consistent
+    B: Remove the traces where the judge and SMEs disagree from the evaluation dataset
+    C: Replace the judge with the built-in Safety judge
+    D: Align the judge with the SME feedback on those traces, verify agreement improves, and then use the aligned judge in mlflow.genai.evaluate()
+  answer: [D]
+  explanation: |
+    MLflow supports aligning an LLM judge with human assessments: the judge's align() method uses
+    traces that carry both judge and SME feedback to produce a judge that better matches the
+    experts, which can then be used as a scorer. A treats a disagreeing judge as truth over
+    calibrated experts. B hides the cases that most need attention and inflates agreement. C
+    measures harmful content, not the claims-processing rubric.
+  refs:
+    - https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/align-judges
+    - https://docs.databricks.com/aws/en/mlflow3/genai/human-feedback/expert-feedback/label-existing-traces
